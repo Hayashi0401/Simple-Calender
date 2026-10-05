@@ -1,0 +1,19 @@
+/*これがメモのスタイルです*/
+
+
+.memo-list {
+  padding: 24px;
+}
+
+.memo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.memo {
+  padding: 12px;
+  margin-bottom: 8px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}

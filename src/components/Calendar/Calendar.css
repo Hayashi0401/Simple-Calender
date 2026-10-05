@@ -1,0 +1,29 @@
+/*これがカレンダーのスタイルです*/
+
+.calendar {
+  padding: 24px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-week,
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-week span {
+  text-align: center;
+  padding: 12px 0;
+}
+
+.calendar-days button {
+  min-height: 60px;
+  border: 1px solid #eee;
+  background: white;
+  cursor: pointer;
+}
