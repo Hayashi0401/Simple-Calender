@@ -1,29 +1,318 @@
-/*これがカレンダーのスタイルです*/
-
-.calendar {
-  padding: 24px;
+/* PC画面にフィットする全体コンテナ */
+.calendar-app {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 16px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #333;
 }
 
+/* カレンダーカード */
+.calendar-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+/* ヘッダーデザイン */
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 16px 24px;
+  background-color: #0f172a; /* 深みのあるネイビー */
+  color: #ffffff;
 }
 
-.calendar-week,
+.calendar-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.badge {
+  background: #334155;
+  color: #f8fafc;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+/* 曜日行 */
+.calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.weekday {
+  padding: 10px 0;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.weekday.sun { color: #ef4444; }
+.weekday.sat { color: #3b82f6; }
+
+/* 日付グリッド */
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  background-color: #e2e8f0; /* グリッド境界線の色 */
+  gap: 1px;
 }
 
-.calendar-week span {
-  text-align: center;
-  padding: 12px 0;
-}
-
-.calendar-days button {
-  min-height: 60px;
-  border: 1px solid #eee;
-  background: white;
+.calendar-day {
+  background-color: #ffffff;
+  min-height: 100px;
+  padding: 8px;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-day:hover {
+  background-color: #f1f5f9;
+}
+
+.calendar-day.is-selected {
+  background-color: #f0f9ff;
+  outline: 2px solid #0284c7;
+  outline-offset: -2px;
+}
+
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.day-number {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* 予定のミニタグ */
+.event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.event-tag {
+  background-color: #eff6ff;
+  border-left: 3px solid #2563eb;
+  color: #1e40af;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event-time {
+  font-weight: bold;
+}
+
+/* モーダル・ダイアログスタイル */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #ffffff;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.no-events {
+  color: #64748b;
+  font-size: 0.9rem;
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* 予定詳細リスト */
+.events-detail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-detail-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #f8fafc;
+}
+
+.event-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.category-pill {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.event-item-sub {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.event-memo-text {
+  margin: 6px 0 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+  white-space: pre-wrap;
+}
+
+/* フォームのデザイン */
+.form-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="time"],
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.required {
+  color: #ef4444;
+}
+
+/* ボタン類 */
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background-color: #f8fafc;
+}
+
+.primary-btn {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.secondary-btn {
+  background-color: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background-color: #f1f5f9;
 }
