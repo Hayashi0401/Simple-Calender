@@ -1,11 +1,9 @@
-/* カレンダー全体とサイドバーの横並びレイアウト */
 .calendar-layout-wrapper {
   display: flex;
   gap: 16px;
   width: 100%;
 }
 
-/* サイドカラーパレットバー */
 .color-palette-sidebar {
   display: flex;
   flex-direction: column;
@@ -27,7 +25,7 @@
 .color-picker-row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .color-picker-row {
@@ -35,16 +33,12 @@
 }
 
 .color-btn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   border: 2px solid transparent;
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s;
-}
-
-.color-btn:hover {
-  transform: scale(1.1);
 }
 
 .color-btn.is-active {
@@ -58,7 +52,6 @@
   flex-direction: column;
 }
 
-/* 1. 年月コントロール */
 .calendar-header {
   display: flex;
   align-items: center;
@@ -89,25 +82,9 @@
   width: 32px;
   height: 32px;
   font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: pointer;
 }
 
-.nav-btn:hover {
-  background: #eee;
-}
-
-.month-badge {
-  font-size: 0.85rem;
-  background: var(--border, #e5e4e7);
-  padding: 4px 10px;
-  border-radius: 12px;
-  color: var(--text, #6b6375);
-}
-
-/* 曜日 */
 .calendar-week {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -120,13 +97,12 @@
   text-align: center;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text, #6b6375);
+  color: #6b6375;
 }
 
 .weekday.sun { color: #e53e3e; }
 .weekday.sat { color: #3182ce; }
 
-/* カレンダーグリッド */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -134,13 +110,16 @@
   background: var(--border, #e5e4e7);
 }
 
+/* セルスタイル */
 .calendar-cell {
-  background: var(--bg, #ffffff);
-  min-height: 95px;
-  padding: 8px 4px;
+  background: #ffffff;
+  min-height: 100px;
+  padding: 6px 4px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  box-sizing: border-border-box;
+  position: relative;
 }
 
 .calendar-cell.empty {
@@ -148,33 +127,57 @@
   cursor: default;
 }
 
-.calendar-cell:hover:not(.empty) {
-  background: #f8f9fa;
+/* 今日の日付の強調背景 */
+.calendar-cell.is-today {
+  background: #f0f7ff;
 }
 
+/* 選択された日付の枠線強調（差別化） */
 .calendar-cell.is-selected {
-  background: var(--accent-bg, rgba(170, 59, 255, 0.1));
+  outline: 3px solid #8a2be2;
+  outline-offset: -3px;
+  z-index: 2;
+}
+
+.cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding: 0 4px;
 }
 
 .cell-day-number {
   font-size: 0.9rem;
   font-weight: bold;
-  margin-bottom: 6px;
-  padding-left: 4px;
+}
+
+.cell-day-number.is-holiday {
+  color: #e53e3e;
+}
+
+.holiday-label {
+  font-size: 0.68rem;
+  color: #e53e3e;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .cell-event-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
-/* 3. 複数日にまたがる連続バー表現（スパン表示） */
+/* 予定タグの文字を濃く・見やすく調整 */
 .cell-event-tag {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   padding: 3px 6px;
   border-radius: 4px;
-  border-left: 3px solid #aa3bff;
+  border-left: 4px solid #8a2be2;
+  font-weight: 700; /* 文字を濃く太字に */
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -185,14 +188,14 @@
 .cell-event-tag.is-span-event {
   border-radius: 0;
   border-left-width: 0;
-  margin: 0 -4px; /* セルの端まで伸ばして接続感を演出 */
+  margin: 0 -4px;
   padding-left: 8px;
 }
 
 .cell-event-tag.is-span-event.span-start {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
-  border-left: 3px solid;
+  border-left: 4px solid;
   margin-left: 0;
 }
 
@@ -203,7 +206,7 @@
 }
 
 .tag-time {
-  font-weight: 600;
+  font-weight: 800;
 }
 
 /* モーダル表示 */
@@ -218,13 +221,18 @@
 }
 
 .modal-box {
-  background: var(--bg, #ffffff);
+  background: #ffffff;
   width: 92%;
   max-width: 560px;
   border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  border: 1px solid var(--border, #e5e4e7);
+  border: 1px solid #e5e4e7;
+}
+
+/* 編集画面モーダル（サイズ拡張） */
+.modal-box.large-modal {
+  max-width: 640px; /* 横幅を拡大 */
 }
 
 .modal-header {
@@ -232,13 +240,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--border, #e5e4e7);
+  border-bottom: 1px solid #e5e4e7;
   background: #fafafa;
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
 .icon-close-btn {
@@ -246,82 +254,19 @@
   border: none;
   font-size: 1.6rem;
   cursor: pointer;
-  color: var(--text);
-  line-height: 1;
+  color: #666;
 }
 
 .modal-body {
   padding: 24px;
-  max-height: 70vh;
+  max-height: 75vh;
   overflow-y: auto;
-}
-
-.empty-text {
-  text-align: center;
-  color: var(--text);
-  font-size: 1rem;
-  margin: 20px 0;
-}
-
-.event-card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.event-card {
-  padding: 14px 16px;
-  border: 1px solid var(--border, #e5e4e7);
-  border-radius: 8px;
-  background: #fdfdfd;
-}
-
-.event-card.clickable {
-  cursor: pointer;
-}
-
-.event-card.clickable:hover {
-  background: #f4f3ec;
-}
-
-.event-card-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.05rem;
-}
-
-.category-tag {
-  font-size: 0.8rem;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-.event-card-time {
-  font-size: 0.9rem;
-  color: var(--text);
-  margin-top: 6px;
-}
-
-.event-card-memo {
-  font-size: 0.85rem;
-  margin-top: 6px;
-  color: var(--text);
-}
-
-.swipe-hint {
-  display: block;
-  font-size: 0.7rem;
-  color: #999;
-  text-align: right;
-  margin-top: 4px;
 }
 
 .form-stack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .field-group {
@@ -333,18 +278,18 @@
 .field-group label {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-h, #000);
+  color: #111;
 }
 
 .field-group input,
 .field-group select,
 .field-group textarea {
-  padding: 10px 14px;
-  border: 1.5px solid var(--border, #ccc);
+  padding: 12px 16px; /* パディングを拡大 */
+  border: 1.5px solid #ccc;
   border-radius: 8px;
-  font-size: 1rem;
-  background: var(--bg);
-  color: var(--text-h);
+  font-size: 1.05rem; /* 入力文字サイズを拡大 */
+  background: #fff;
+  color: #111;
 }
 
 .field-row {
@@ -360,13 +305,13 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   cursor: pointer;
 }
 
 .field-checkbox input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
 }
 
@@ -376,7 +321,7 @@
 
 .modal-footer {
   padding: 16px 24px;
-  border-top: 1px solid var(--border, #e5e4e7);
+  border-top: 1px solid #e5e4e7;
   background: #fafafa;
 }
 
@@ -393,16 +338,16 @@
 
 .right-action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .btn-primary {
-  background: var(--accent, #aa3bff);
+  background: #8a2be2;
   color: #fff;
   border: none;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -411,21 +356,21 @@
   background: #e53e3e;
   color: #fff;
   border: none;
-  padding: 10px 18px;
+  padding: 12px 20px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
 }
 
 .btn-cancel-icon {
   background: none;
-  border: 1.5px solid var(--border, #ccc);
-  color: var(--text, #666);
-  width: 42px;
-  height: 42px;
+  border: 1.5px solid #ccc;
+  color: #666;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
