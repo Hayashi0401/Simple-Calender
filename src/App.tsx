@@ -1,5 +1,3 @@
-// これが親元。ここから子コンポーネントのCalendarとMemoListを呼び出している。
-
 import { Calendar } from "./components/Calendar/Calendar";
 import { MemoList } from "./components/Memo/MemoList";
 import "./App.css";
@@ -12,13 +10,15 @@ function App() {
       </header>
 
       <main className="app-main">
+        {/* メインカレンダー */}
         <section className="calendar-section">
           <Calendar />
         </section>
 
-        <aside className="memo-section">
+        {/* 下部に配置するメモエリア */}
+        <section className="memo-section">
           <MemoList />
-        </aside>
+        </section>
       </main>
     </div>
   );
