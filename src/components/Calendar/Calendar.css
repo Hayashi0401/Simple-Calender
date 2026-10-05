@@ -1,22 +1,102 @@
-.calendar-container {
+/* カレンダー全体とサイドバーの横並びレイアウト */
+.calendar-layout-wrapper {
   display: flex;
-  flex-direction: column;
-  height: 100%;
+  gap: 16px;
+  width: 100%;
 }
 
+/* サイドカラーパレットバー */
+.color-palette-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--code-bg, #f4f3ec);
+  border-radius: 12px;
+  border: 1px solid var(--border, #e5e4e7);
+}
+
+.color-palette-sidebar h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text, #666);
+  text-align: center;
+}
+
+.color-picker-list,
+.color-picker-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-picker-row {
+  flex-direction: row;
+}
+
+.color-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.color-btn:hover {
+  transform: scale(1.1);
+}
+
+.color-btn.is-active {
+  border-color: #000;
+  transform: scale(1.15);
+}
+
+.calendar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 1. 年月コントロール */
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px;
+  padding: 16px 20px;
   background-color: var(--code-bg, #f4f3ec);
   border-bottom: 1px solid var(--border, #e5e4e7);
   border-radius: 12px 12px 0 0;
 }
 
-.calendar-header h2 {
+.month-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.month-control h2 {
   margin: 0;
   font-size: 1.3rem;
+  min-width: 130px;
+  text-align: center;
+}
+
+.nav-btn {
+  background: #fff;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  background: #eee;
 }
 
 .month-badge {
@@ -27,6 +107,7 @@
   color: var(--text, #6b6375);
 }
 
+/* 曜日 */
 .calendar-week {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -45,6 +126,7 @@
 .weekday.sun { color: #e53e3e; }
 .weekday.sat { color: #3182ce; }
 
+/* カレンダーグリッド */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -55,14 +137,18 @@
 .calendar-cell {
   background: var(--bg, #ffffff);
   min-height: 95px;
-  padding: 8px;
+  padding: 8px 4px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  transition: background-color 0.15s;
 }
 
-.calendar-cell:hover {
+.calendar-cell.empty {
+  background: #fafafa;
+  cursor: default;
+}
+
+.calendar-cell:hover:not(.empty) {
   background: #f8f9fa;
 }
 
@@ -74,6 +160,7 @@
   font-size: 0.9rem;
   font-weight: bold;
   margin-bottom: 6px;
+  padding-left: 4px;
 }
 
 .cell-event-list {
@@ -82,17 +169,37 @@
   gap: 3px;
 }
 
+/* 3. 複数日にまたがる連続バー表現（スパン表示） */
 .cell-event-tag {
-  background: var(--accent-bg, rgba(170, 59, 255, 0.1));
-  border-left: 3px solid var(--accent, #aa3bff);
   font-size: 0.75rem;
   padding: 3px 6px;
-  border-radius: 3px;
+  border-radius: 4px;
+  border-left: 3px solid #aa3bff;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: flex;
   gap: 4px;
+}
+
+.cell-event-tag.is-span-event {
+  border-radius: 0;
+  border-left-width: 0;
+  margin: 0 -4px; /* セルの端まで伸ばして接続感を演出 */
+  padding-left: 8px;
+}
+
+.cell-event-tag.is-span-event.span-start {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+  border-left: 3px solid;
+  margin-left: 0;
+}
+
+.cell-event-tag.is-span-event.span-end {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  margin-right: 0;
 }
 
 .tag-time {
@@ -163,12 +270,10 @@
 }
 
 .event-card {
-  position: relative;
   padding: 14px 16px;
   border: 1px solid var(--border, #e5e4e7);
   border-radius: 8px;
   background: #fdfdfd;
-  transition: transform 0.15s, background-color 0.15s;
 }
 
 .event-card.clickable {
@@ -190,8 +295,6 @@
   font-size: 0.8rem;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--accent-bg, rgba(170, 59, 255, 0.1));
-  color: var(--accent, #aa3bff);
   font-weight: 600;
 }
 
@@ -215,7 +318,6 @@
   margin-top: 4px;
 }
 
-/* フォーム・入力周り */
 .form-stack {
   display: flex;
   flex-direction: column;
@@ -272,7 +374,6 @@
   color: #e53e3e;
 }
 
-/* モーダルフッターレイアウト */
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border, #e5e4e7);
@@ -295,7 +396,6 @@
   gap: 10px;
 }
 
-/* ボタン各種 */
 .btn-primary {
   background: var(--accent, #aa3bff);
   color: #fff;
@@ -330,9 +430,4 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-cancel-icon:hover {
-  background: #eee;
 }
