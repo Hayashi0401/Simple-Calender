@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import "./Calendar.css";
 
 export type Event = {
@@ -19,7 +19,6 @@ export function Calendar() {
   const [currentMonth] = useState(12);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // 登録された予定リスト
   const [events, setEvents] = useState<Event[]>([
     {
       id: "1",
@@ -35,9 +34,12 @@ export function Calendar() {
     },
   ]);
 
-  // モーダル管理
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  // モーダル表示状態
+  const [isListModalOpen, setIsListModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  
+  // 編集対象のID（nullの場合は新規作成）
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   // フォームステート
   const [category, setCategory] = useState("学校");
@@ -50,22 +52,54 @@ export function Calendar() {
   const [repeat, setRepeat] = useState<Event["repeat"]>("none");
   const [memo, setMemo] = useState("");
 
+  // スワイプ操作用
+  const touchStartX = useRef<number>(0);
+
+  // 日付クリック時（一覧モーダルを開く）
   const handleDateClick = (date: string) => {
     setSelectedDate(date);
-    setStartDate(date);
-    setEndDate(date);
-    setIsModalOpen(true);
+    setIsListModalOpen(true);
   };
 
-  const handleOpenForm = () => {
+  // 新規登録フォームを開く
+  const handleOpenNewForm = () => {
+    setEditingEventId(null);
+    setCategory("学校");
     setTitle("");
-    setMemo("");
     setAllDay(false);
+    setStartDate(selectedDate || "");
+    setEndDate(selectedDate || "");
     setStartTime("09:00");
     setEndTime("10:00");
-    setIsFormOpen(true);
+    setRepeat("none");
+    setMemo("");
+    setIsListModalOpen(false);
+    setIsFormModalOpen(true);
   };
 
+  // 既存予定をタップして編集フォームを開く
+  const handleOpenEditForm = (event: Event) => {
+    setEditingEventId(event.id);
+    setCategory(event.category);
+    setTitle(event.title);
+    setAllDay(event.allDay);
+    setStartDate(event.startDate);
+    setEndDate(event.endDate);
+    setStartTime(event.startTime || "09:00");
+    setEndTime(event.endTime || "10:00");
+    setRepeat(event.repeat);
+    setMemo(event.memo);
+    setIsListModalOpen(false);
+    setIsFormModalOpen(true);
+  };
+
+  // フォームキャンセル（画面外クリック／×ボタン）
+  const handleCloseForm = () => {
+    setIsFormModalOpen(false);
+    setEditingEventId(null);
+  };
+
+  // 保存処理（新規追加・更新）
   const handleSaveEvent = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -73,21 +107,68 @@ export function Calendar() {
       return;
     }
 
-    const newEvent: Event = {
-      id: crypto.randomUUID(),
-      category,
-      title: title.trim(),
-      allDay,
-      startDate,
-      endDate: endDate || startDate,
-      startTime: allDay ? "" : startTime,
-      endTime: allDay ? "" : endTime,
-      repeat,
-      memo: memo.trim(),
-    };
+    if (editingEventId) {
+      // 更新
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.id === editingEventId
+            ? {
+                ...ev,
+                category,
+                title: title.trim(),
+                allDay,
+                startDate,
+                endDate: endDate || startDate,
+                startTime: allDay ? "" : startTime,
+                endTime: allDay ? "" : endTime,
+                repeat,
+                memo: memo.trim(),
+              }
+            : ev
+        )
+      );
+    } else {
+      // 新規作成
+      const newEvent: Event = {
+        id: crypto.randomUUID(),
+        category,
+        title: title.trim(),
+        allDay,
+        startDate,
+        endDate: endDate || startDate,
+        startTime: allDay ? "" : startTime,
+        endTime: allDay ? "" : endTime,
+        repeat,
+        memo: memo.trim(),
+      };
+      setEvents((prev) => [...prev, newEvent]);
+    }
 
-    setEvents((prev) => [...prev, newEvent]);
-    setIsFormOpen(false);
+    setIsFormModalOpen(false);
+    setEditingEventId(null);
+  };
+
+  // 削除処理
+  const handleDeleteEvent = (id: string) => {
+    if (confirm("この予定を削除してもよろしいですか？")) {
+      setEvents((prev) => prev.filter((ev) => ev.id !== id));
+      setIsFormModalOpen(false);
+      setIsListModalOpen(false);
+      setEditingEventId(null);
+    }
+  };
+
+  // タッチ・スワイプのハンドラー
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent, id: string) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    // 左に50px以上スワイプされたら削除の確認
+    if (touchStartX.current - touchEndX > 50) {
+      handleDeleteEvent(id);
+    }
   };
 
   const selectedDayEvents = events.filter(
@@ -96,13 +177,13 @@ export function Calendar() {
 
   return (
     <div className="calendar-container">
-      {/* カレンダーヘッダー */}
+      {/* ヘッダー */}
       <div className="calendar-header">
         <h2>{currentYear}年 {currentMonth}月</h2>
         <span className="month-badge">月表示</span>
       </div>
 
-      {/* 曜日標記 */}
+      {/* 曜日 */}
       <div className="calendar-week">
         <div className="weekday sun">日</div>
         <div className="weekday">月</div>
@@ -113,7 +194,7 @@ export function Calendar() {
         <div className="weekday sat">土</div>
       </div>
 
-      {/* 日付グリッド */}
+      {/* カレンダーグリッド */}
       <div className="calendar-grid">
         {Array.from({ length: 31 }, (_, i) => {
           const day = i + 1;
@@ -143,13 +224,13 @@ export function Calendar() {
         })}
       </div>
 
-      {/* 日付クリック時の予定一覧モーダル */}
-      {isModalOpen && selectedDate && !isFormOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+      {/* 1. 予定一覧モーダル */}
+      {isListModalOpen && selectedDate && (
+        <div className="modal-overlay" onClick={() => setIsListModalOpen(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{selectedDate} の予定</h3>
-              <button className="icon-close-btn" onClick={() => setIsModalOpen(false)}>×</button>
+              <h3>{selectedDate} の予定一覧</h3>
+              <button className="icon-close-btn" onClick={() => setIsListModalOpen(false)}>×</button>
             </div>
             <div className="modal-body">
               {selectedDayEvents.length === 0 ? (
@@ -157,7 +238,13 @@ export function Calendar() {
               ) : (
                 <div className="event-card-list">
                   {selectedDayEvents.map((ev) => (
-                    <div key={ev.id} className="event-card">
+                    <div
+                      key={ev.id}
+                      className="event-card clickable"
+                      onClick={() => handleOpenEditForm(ev)}
+                      onTouchStart={handleTouchStart}
+                      onTouchEnd={(e) => handleTouchEnd(e, ev.id)}
+                    >
                       <div className="event-card-top">
                         <span className="category-tag">{ev.category}</span>
                         <strong>{ev.title}</strong>
@@ -166,13 +253,14 @@ export function Calendar() {
                         {ev.allDay ? "終日" : `${ev.startTime} 〜 ${ev.endTime}`}
                       </div>
                       {ev.memo && <p className="event-card-memo">{ev.memo}</p>}
+                      <span className="swipe-hint">← スワイプで削除</span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <div className="modal-footer">
-              <button className="btn-primary" onClick={handleOpenForm}>
+            <div className="modal-footer justify-end">
+              <button className="btn-primary" onClick={handleOpenNewForm}>
                 ＋ 予定を追加
               </button>
             </div>
@@ -180,14 +268,17 @@ export function Calendar() {
         </div>
       )}
 
-      {/* 予定作成フォームモーダル */}
-      {isFormOpen && (
-        <div className="modal-overlay" onClick={() => setIsFormOpen(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>新規予定の登録</h3>
-              <button className="icon-close-btn" onClick={() => setIsFormOpen(false)}>×</button>
-            </div>
+      {/* 2. 予定の追加・編集フォームモーダル */}
+      {isFormModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseForm}>
+          <div
+            className="modal-box form-modal-box"
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={(e) => {
+              if (editingEventId) handleTouchEnd(e, editingEventId);
+            }}
+          >
             <form onSubmit={handleSaveEvent}>
               <div className="modal-body form-stack">
                 <div className="field-group">
@@ -289,17 +380,31 @@ export function Calendar() {
                 </div>
               </div>
 
-              <div className="modal-footer">
+              {/* フッター：左下に×キャンセルボタン、右下に保存・削除ボタン */}
+              <div className="modal-footer split-footer">
                 <button
                   type="button"
-                  className="btn-secondary"
-                  onClick={() => setIsFormOpen(false)}
+                  className="btn-cancel-icon"
+                  onClick={handleCloseForm}
+                  title="キャンセル"
                 >
-                  キャンセル
+                  ✕
                 </button>
-                <button type="submit" className="btn-primary">
-                  保存
-                </button>
+
+                <div className="right-action-buttons">
+                  {editingEventId && (
+                    <button
+                      type="button"
+                      className="btn-danger"
+                      onClick={() => handleDeleteEvent(editingEventId)}
+                    >
+                      削除
+                    </button>
+                  )}
+                  <button type="submit" className="btn-primary">
+                    保存
+                  </button>
+                </div>
               </div>
             </form>
           </div>

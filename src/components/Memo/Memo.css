@@ -36,12 +36,11 @@
   cursor: pointer;
 }
 
-/* メモリストのスクロールエリア */
 .memos-scroll-area {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 280px; /* ここを超えると縦スクロール表示 */
+  max-height: 280px;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -52,4 +51,77 @@
   border-radius: 8px;
   background: #fafafa;
   font-size: 0.95rem;
+}
+
+.memo-view-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memo-view-row p {
+  margin: 0;
+  word-break: break-word;
+}
+
+.memo-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.memo-action-btn {
+  background: none;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text, #666);
+}
+
+.memo-action-btn:hover {
+  background: #eee;
+}
+
+.memo-action-btn.delete {
+  color: #e53e3e;
+  border-color: #fca5a5;
+}
+
+.memo-action-btn.delete:hover {
+  background: #fee2e2;
+}
+
+/* メモ編集時のUI */
+.memo-edit-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.memo-edit-row input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1.5px solid var(--accent, #aa3bff);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.memo-btn {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.memo-btn.save-btn {
+  background: var(--accent, #aa3bff);
+  color: white;
+}
+
+.memo-btn.cancel-btn {
+  background: #eee;
+  color: #333;
 }

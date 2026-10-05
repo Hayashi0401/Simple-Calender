@@ -99,7 +99,7 @@
   font-weight: 600;
 }
 
-/* ＝ゆったり大きめのモーダルスタイル＝ */
+/* モーダル表示 */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -113,7 +113,7 @@
 .modal-box {
   background: var(--bg, #ffffff);
   width: 92%;
-  max-width: 560px; /* 横幅を拡大 */
+  max-width: 560px;
   border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   overflow: hidden;
@@ -163,10 +163,20 @@
 }
 
 .event-card {
+  position: relative;
   padding: 14px 16px;
   border: 1px solid var(--border, #e5e4e7);
   border-radius: 8px;
   background: #fdfdfd;
+  transition: transform 0.15s, background-color 0.15s;
+}
+
+.event-card.clickable {
+  cursor: pointer;
+}
+
+.event-card.clickable:hover {
+  background: #f4f3ec;
 }
 
 .event-card-top {
@@ -197,7 +207,15 @@
   color: var(--text);
 }
 
-/* フォームフィールドのサイズアップ */
+.swipe-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: #999;
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* フォーム・入力周り */
 .form-stack {
   display: flex;
   flex-direction: column;
@@ -216,7 +234,6 @@
   color: var(--text-h, #000);
 }
 
-/* 入力枠と文字を大きめに設定 */
 .field-group input,
 .field-group select,
 .field-group textarea {
@@ -226,14 +243,6 @@
   font-size: 1rem;
   background: var(--bg);
   color: var(--text-h);
-  transition: border-color 0.2s;
-}
-
-.field-group input:focus,
-.field-group select:focus,
-.field-group textarea:focus {
-  outline: none;
-  border-color: var(--accent, #aa3bff);
 }
 
 .field-row {
@@ -263,15 +272,30 @@
   color: #e53e3e;
 }
 
+/* モーダルフッターレイアウト */
 .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border, #e5e4e7);
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
   background: #fafafa;
 }
 
+.modal-footer.justify-end {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-footer.split-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.right-action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* ボタン各種 */
 .btn-primary {
   background: var(--accent, #aa3bff);
   color: #fff;
@@ -283,12 +307,32 @@
   cursor: pointer;
 }
 
-.btn-secondary {
-  background: #fff;
-  border: 1px solid var(--border, #ccc);
-  color: var(--text);
-  padding: 10px 20px;
+.btn-danger {
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
   border-radius: 8px;
   font-size: 1rem;
+  font-weight: 600;
   cursor: pointer;
+}
+
+.btn-cancel-icon {
+  background: none;
+  border: 1.5px solid var(--border, #ccc);
+  color: var(--text, #666);
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-cancel-icon:hover {
+  background: #eee;
 }
