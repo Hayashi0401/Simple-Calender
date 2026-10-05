@@ -4,25 +4,30 @@
 
 .app-header {
   padding: 20px 32px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border, #eee);
+  text-align: left;
 }
 
 .app-header h1 {
   margin: 0;
+  font-size: 28px;
 }
 
+/* 縦並びレイアウト */
 .app-main {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 0 16px;
+  text-align: left;
 }
 
 .calendar-section,
 .memo-section {
-  border: 1px solid #eee;
+  border: 1px solid var(--border, #eee);
   border-radius: 12px;
-  background: white;
+  background: var(--bg, #fff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }

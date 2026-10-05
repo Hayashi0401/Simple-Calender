@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./Calendar.css";
 
-type Event = {
+export type Event = {
   id: string;
   category: string;
   title: string;
@@ -16,30 +16,30 @@ type Event = {
 
 export function Calendar() {
   const [currentYear] = useState(2026);
-  const [currentMonth] = useState(12); // 2026年12月表示
+  const [currentMonth] = useState(12);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  
-  // 登録された予定のリスト
+
+  // 登録された予定リスト
   const [events, setEvents] = useState<Event[]>([
     {
       id: "1",
       category: "学校",
-      title: "学校",
+      title: "卒研打ち合わせ",
       allDay: false,
       startDate: "2026-12-01",
       endDate: "2026-12-01",
       startTime: "09:00",
       endTime: "14:30",
       repeat: "none",
-      memo: "卒業研究打ち合わせ",
+      memo: "ゼミ室にて進捗報告",
     },
   ]);
 
-  // モーダルの開閉状態
+  // モーダル管理
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // フォームの入力項目ステート
+  // フォームステート
   const [category, setCategory] = useState("学校");
   const [title, setTitle] = useState("");
   const [allDay, setAllDay] = useState(false);
@@ -50,7 +50,6 @@ export function Calendar() {
   const [repeat, setRepeat] = useState<Event["repeat"]>("none");
   const [memo, setMemo] = useState("");
 
-  // 日付セルをクリックしたとき
   const handleDateClick = (date: string) => {
     setSelectedDate(date);
     setStartDate(date);
@@ -58,7 +57,6 @@ export function Calendar() {
     setIsModalOpen(true);
   };
 
-  // 新規予定追加ボタンを押したとき
   const handleOpenForm = () => {
     setTitle("");
     setMemo("");
@@ -68,15 +66,8 @@ export function Calendar() {
     setIsFormOpen(true);
   };
 
-  // フォームを閉じるとき
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-  };
-
-  // 予定の保存処理
   const handleSaveEvent = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!title.trim()) {
       alert("タイトルを入力してください");
       return;
@@ -96,231 +87,218 @@ export function Calendar() {
     };
 
     setEvents((prev) => [...prev, newEvent]);
-    setIsFormOpen(false); // フォームを閉じる
+    setIsFormOpen(false);
   };
 
-  // 選択中の日付の予定フィルタリング
   const selectedDayEvents = events.filter(
     (ev) => selectedDate && selectedDate >= ev.startDate && selectedDate <= ev.endDate
   );
 
   return (
-    <div className="calendar-app">
-      {/* メインカレンダーエリア */}
-      <div className="calendar-card">
-        {/* ヘッダー */}
-        <div className="calendar-header">
-          <h2>{currentYear}年 {currentMonth}月</h2>
-          <div className="header-controls">
-            <span className="badge">月表示</span>
-          </div>
-        </div>
+    <div className="calendar-container">
+      {/* カレンダーヘッダー */}
+      <div className="calendar-header">
+        <h2>{currentYear}年 {currentMonth}月</h2>
+        <span className="month-badge">月表示</span>
+      </div>
 
-        {/* 曜日ヘッダー */}
-        <div className="calendar-week">
-          <div className="weekday sun">日</div>
-          <div className="weekday">月</div>
-          <div className="weekday">火</div>
-          <div className="weekday">水</div>
-          <div className="weekday">木</div>
-          <div className="weekday">金</div>
-          <div className="weekday sat">土</div>
-        </div>
+      {/* 曜日標記 */}
+      <div className="calendar-week">
+        <div className="weekday sun">日</div>
+        <div className="weekday">月</div>
+        <div className="weekday">火</div>
+        <div className="weekday">水</div>
+        <div className="weekday">木</div>
+        <div className="weekday">金</div>
+        <div className="weekday sat">土</div>
+      </div>
 
-        {/* 日付セルグリッド (2026年12月例: 1日〜31日) */}
-        <div className="calendar-days">
-          {Array.from({ length: 31 }, (_, index) => {
-            const day = index + 1;
-            const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      {/* 日付グリッド */}
+      <div className="calendar-grid">
+        {Array.from({ length: 31 }, (_, i) => {
+          const day = i + 1;
+          const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+          const dayEvents = events.filter(
+            (ev) => dateStr >= ev.startDate && dateStr <= ev.endDate
+          );
+          const isSelected = selectedDate === dateStr;
 
-            // この日に当てはまる予定を取得
-            const dayEvents = events.filter(
-              (event) => dateStr >= event.startDate && dateStr <= event.endDate
-            );
+          return (
+            <div
+              key={dateStr}
+              className={`calendar-cell ${isSelected ? "is-selected" : ""}`}
+              onClick={() => handleDateClick(dateStr)}
+            >
+              <div className="cell-day-number">{day}</div>
+              <div className="cell-event-list">
+                {dayEvents.map((ev) => (
+                  <div key={ev.id} className="cell-event-tag">
+                    {!ev.allDay && <span className="tag-time">{ev.startTime}</span>}
+                    <span className="tag-title">{ev.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
-            const isSelected = selectedDate === dateStr;
-
-            return (
-              <div
-                key={dateStr}
-                className={`calendar-day ${isSelected ? "is-selected" : ""}`}
-                onClick={() => handleDateClick(dateStr)}
-              >
-                <div className="day-header">
-                  <span className="day-number">{day}</span>
-                </div>
-                <div className="event-list">
-                  {dayEvents.map((ev) => (
-                    <div key={ev.id} className="event-tag">
-                      {!ev.allDay && <span className="event-time">{ev.startTime}</span>}
-                      <span className="event-title">{ev.title}</span>
+      {/* 日付クリック時の予定一覧モーダル */}
+      {isModalOpen && selectedDate && !isFormOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{selectedDate} の予定</h3>
+              <button className="icon-close-btn" onClick={() => setIsModalOpen(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {selectedDayEvents.length === 0 ? (
+                <p className="empty-text">予定はありません</p>
+              ) : (
+                <div className="event-card-list">
+                  {selectedDayEvents.map((ev) => (
+                    <div key={ev.id} className="event-card">
+                      <div className="event-card-top">
+                        <span className="category-tag">{ev.category}</span>
+                        <strong>{ev.title}</strong>
+                      </div>
+                      <div className="event-card-time">
+                        {ev.allDay ? "終日" : `${ev.startTime} 〜 ${ev.endTime}`}
+                      </div>
+                      {ev.memo && <p className="event-card-memo">{ev.memo}</p>}
                     </div>
                   ))}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* モーダル1：指定日の予定確認ダイアログ */}
-      {isModalOpen && selectedDate && !isFormOpen && (
-        <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{selectedDate} の予定一覧</h3>
-              <button className="close-btn" onClick={() => setIsModalOpen(false)}>×</button>
-            </div>
-
-            <div className="modal-body">
-              {selectedDayEvents.length === 0 ? (
-                <p className="no-events">予定はありません</p>
-              ) : (
-                <ul className="events-detail-list">
-                  {selectedDayEvents.map((ev) => (
-                    <li key={ev.id} className="event-detail-item">
-                      <div className="event-item-main">
-                        <span className="category-pill">{ev.category}</span>
-                        <strong>{ev.title}</strong>
-                      </div>
-                      <div className="event-item-sub">
-                        {ev.allDay ? (
-                          <span>終日</span>
-                        ) : (
-                          <span>{ev.startTime} 〜 {ev.endTime}</span>
-                        )}
-                        {ev.memo && <p className="event-memo-text">{ev.memo}</p>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
               )}
             </div>
-
             <div className="modal-footer">
-              <button className="primary-btn" onClick={handleOpenForm}>
-                ＋ 新しい予定を追加
+              <button className="btn-primary" onClick={handleOpenForm}>
+                ＋ 予定を追加
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* モーダル2：予定登録フォーム */}
+      {/* 予定作成フォームモーダル */}
       {isFormOpen && (
-        <div className="modal-backdrop" onClick={handleCloseForm}>
-          <div className="modal-content form-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setIsFormOpen(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>予定の登録</h3>
-              <button className="close-btn" onClick={handleCloseForm}>×</button>
+              <h3>新規予定の登録</h3>
+              <button className="icon-close-btn" onClick={() => setIsFormOpen(false)}>×</button>
             </div>
-
-            <form onSubmit={handleSaveEvent} className="modal-body form-body">
-              <div className="form-group">
-                <label>カテゴリ</label>
-                <input
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="例：学校、仕事、プライベート"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>タイトル <span className="required">*</span></label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="予定の件名"
-                  required
-                  autoFocus
-                />
-              </div>
-
-              <div className="form-group checkbox-group">
-                <label>
+            <form onSubmit={handleSaveEvent}>
+              <div className="modal-body form-stack">
+                <div className="field-group">
+                  <label>カテゴリ</label>
                   <input
-                    type="checkbox"
-                    checked={allDay}
-                    onChange={(e) => setAllDay(e.target.checked)}
-                  />
-                  終日予定にする
-                </label>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label>開始日</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    required
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="例：学校、仕事、プライベート"
                   />
                 </div>
-                <div className="form-group">
-                  <label>終了日</label>
+
+                <div className="field-group">
+                  <label>タイトル <span className="req">*</span></label>
                   <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="件名を入力"
                     required
+                    autoFocus
                   />
                 </div>
-              </div>
 
-              {!allDay && (
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>開始時刻</label>
+                <div className="field-checkbox">
+                  <label>
                     <input
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
+                      type="checkbox"
+                      checked={allDay}
+                      onChange={(e) => setAllDay(e.target.checked)}
+                    />
+                    終日予定
+                  </label>
+                </div>
+
+                <div className="field-row">
+                  <div className="field-group">
+                    <label>開始日</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      required
                     />
                   </div>
-                  <div className="form-group">
-                    <label>終了時刻</label>
+                  <div className="field-group">
+                    <label>終了日</label>
                     <input
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
-              )}
 
-              <div className="form-group">
-                <label>繰り返し</label>
-                <select
-                  value={repeat}
-                  onChange={(e) => setRepeat(e.target.value as Event["repeat"])}
-                >
-                  <option value="none">繰り返さない</option>
-                  <option value="daily">毎日</option>
-                  <option value="weekly">毎週</option>
-                  <option value="monthly">毎月</option>
-                </select>
-              </div>
+                {!allDay && (
+                  <div className="field-row">
+                    <div className="field-group">
+                      <label>開始時刻</label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label>終了時刻</label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
 
-              <div className="form-group">
-                <label>メモ・説明</label>
-                <textarea
-                  rows={3}
-                  value={memo}
-                  onChange={(e) => setMemo(e.target.value)}
-                  placeholder="場所や補足情報を入力"
-                />
+                <div className="field-group">
+                  <label>繰り返し</label>
+                  <select
+                    value={repeat}
+                    onChange={(e) => setRepeat(e.target.value as Event["repeat"])}
+                  >
+                    <option value="none">なし</option>
+                    <option value="daily">毎日</option>
+                    <option value="weekly">毎週</option>
+                    <option value="monthly">毎月</option>
+                  </select>
+                </div>
+
+                <div className="field-group">
+                  <label>メモ</label>
+                  <textarea
+                    rows={2}
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    placeholder="詳細やメモを入力"
+                  />
+                </div>
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="secondary-btn" onClick={handleCloseForm}>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setIsFormOpen(false)}
+                >
                   キャンセル
                 </button>
-                <button type="submit" className="primary-btn">
-                  保存する
+                <button type="submit" className="btn-primary">
+                  保存
                 </button>
               </div>
             </form>
