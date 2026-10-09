@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import "./Calendar.css";
+import { supabase } from "../../lib/supabase";
 
 export type Event = {
   id: string;
@@ -22,8 +23,6 @@ const COLOR_OPTIONS = [
   { label: "オレンジ", value: "#d97706" },
   { label: "レッド", value: "#c53030" },
 ];
-
-const LOCAL_STORAGE_KEY = "simplia_calendar_events";
 
 // 日本の祝日判定関数
 function getJapaneseHoliday(year: number, month: number, day: number): string | null {
@@ -94,38 +93,52 @@ export function Calendar() {
   const [selectedColor, setSelectedColor] = useState("#8a2be2");
   const [selectedDate, setSelectedDate] = useState<string | null>(todayStr);
 
-  // 【追加機能】localStorageから予定データを初期ロード
-  const [events, setEvents] = useState<Event[]>(() => {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("データの読み込みに失敗しました", e);
-      }
-    }
-    // 初期サンプルデータ
-    return [
-      {
-        id: "1",
-        category: "学校",
-        title: "卒研打ち合わせ",
-        allDay: false,
-        startDate: todayStr,
-        endDate: todayStr,
-        startTime: "09:00",
-        endTime: "14:30",
-        repeat: "weekly",
-        memo: "ゼミ室にて進捗報告",
-        color: "#8a2be2",
-      },
-    ];
-  });
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 【追加機能】events変更時に自動保存
+  // Supabaseから予定データ一覧を取得
+  const fetchEvents = async () => {
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("予定の取得に失敗しました:", error.message);
+        return;
+      }
+
+      if (data) {
+        const formattedEvents: Event[] = data.map((item) => ({
+          id: item.id,
+          category: item.category,
+          title: item.title,
+          allDay: item.all_day ?? false,
+          startDate: item.start_date,
+          endDate: item.end_date,
+          startTime: item.start_time ?? "",
+          endTime: item.end_time ?? "",
+          repeat: item.repeat ?? "none",
+          memo: item.memo ?? "",
+          color: item.color ?? "#8a2be2",
+        }));
+
+        setEvents(formattedEvents);
+      }
+    } catch (error) {
+      console.error("予定の取得中にエラーが発生しました:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // コンポーネントの初回表示時に取得
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(events));
-  }, [events]);
+    fetchEvents();
+  }, []);
 
   const [isListModalOpen, setIsListModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -212,7 +225,8 @@ export function Calendar() {
     setErrorMessage(null);
   };
 
-  const handleSaveEvent = (e: React.FormEvent) => {
+  // 保存処理（新規登録・更新）
+  const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -228,50 +242,56 @@ export function Calendar() {
       return;
     }
 
+    const payload = {
+      category,
+      title: title.trim(),
+      all_day: allDay,
+      start_date: startDate,
+      end_date: endDate || startDate,
+      start_time: allDay ? null : startTime,
+      end_time: allDay ? null : endTime,
+      repeat,
+      memo: memo.trim(),
+      color: eventColor,
+    };
+
     if (editingEventId) {
-      setEvents((prev) =>
-        prev.map((ev) =>
-          ev.id === editingEventId
-            ? {
-                ...ev,
-                category,
-                title: title.trim(),
-                allDay,
-                startDate,
-                endDate: endDate || startDate,
-                startTime: allDay ? "" : startTime,
-                endTime: allDay ? "" : endTime,
-                repeat,
-                memo: memo.trim(),
-                color: eventColor,
-              }
-            : ev
-        )
-      );
+      // DB更新 (Update)
+      const { error } = await supabase
+        .from("events")
+        .update(payload)
+        .eq("id", editingEventId);
+
+      if (error) {
+        setErrorMessage("更新に失敗しました: " + error.message);
+        return;
+      }
     } else {
-      const newEvent: Event = {
-        id: crypto.randomUUID(),
-        category,
-        title: title.trim(),
-        allDay,
-        startDate,
-        endDate: endDate || startDate,
-        startTime: allDay ? "" : startTime,
-        endTime: allDay ? "" : endTime,
-        repeat,
-        memo: memo.trim(),
-        color: eventColor,
-      };
-      setEvents((prev) => [...prev, newEvent]);
+      // DB新規挿入 (Insert)
+      const { error } = await supabase.from("events").insert([payload]);
+
+      if (error) {
+        setErrorMessage("保存に失敗しました: " + error.message);
+        return;
+      }
     }
 
+    await fetchEvents(); // 最新データを再取得
     setIsFormModalOpen(false);
     setEditingEventId(null);
   };
 
-  const handleDeleteEvent = (id: string) => {
+  // 削除処理
+  const handleDeleteEvent = async (id: string) => {
     if (confirm("この予定を削除してもよろしいですか？")) {
-      setEvents((prev) => prev.filter((ev) => ev.id !== id));
+      const { error } = await supabase.from("events").delete().eq("id", id);
+
+      if (error) {
+        alert("削除に失敗しました: " + error.message);
+        return;
+      }
+
+      await fetchEvents(); // 最新データを再取得
       setIsFormModalOpen(false);
       setIsListModalOpen(false);
       setEditingEventId(null);
@@ -317,7 +337,11 @@ export function Calendar() {
             <h2>{currentYear}年 {currentMonth}月</h2>
             <button className="nav-btn" onClick={handleNextMonth}>›</button>
           </div>
-          <span className="month-badge">月表示</span>
+          {isLoading ? (
+            <span className="month-badge">読み込み中...</span>
+          ) : (
+            <span className="month-badge">月表示</span>
+          )}
         </div>
 
         <div className="calendar-week">
