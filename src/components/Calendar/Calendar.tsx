@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./Calendar.css";
 
 export type Event = {
@@ -10,7 +10,7 @@ export type Event = {
   endDate: string;
   startTime: string;
   endTime: string;
-  repeat: "none" | "daily" | "weekly" | "monthly";
+  repeat: "none" | "weekly" | "monthly" | "yearly";
   memo: string;
   color: string;
 };
@@ -23,13 +23,13 @@ const COLOR_OPTIONS = [
   { label: "レッド", value: "#c53030" },
 ];
 
-// 日本の祝日判定用関数 (簡易計算ロジック)
+const LOCAL_STORAGE_KEY = "simplia_calendar_events";
+
+// 日本の祝日判定関数
 function getJapaneseHoliday(year: number, month: number, day: number): string | null {
-  const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-  const dayOfWeek = new Date(year, month - 1, day).getDay(); // 0: 日, 1: 月...
+  const dayOfWeek = new Date(year, month - 1, day).getDay();
   const nthWeek = Math.ceil(day / 7);
 
-  // 固定祝日
   if (month === 1 && day === 1) return "元日";
   if (month === 2 && day === 11) return "建国記念の日";
   if (month === 2 && day === 23) return "天皇誕生日";
@@ -41,7 +41,6 @@ function getJapaneseHoliday(year: number, month: number, day: number): string | 
   if (month === 11 && day === 3) return "文化の日";
   if (month === 11 && day === 23) return "勤労感謝の日";
 
-  // ハッピーマンデー (月曜日固定)
   if (dayOfWeek === 1) {
     if (month === 1 && nthWeek === 2) return "成人の日";
     if (month === 7 && nthWeek === 3) return "海の日";
@@ -49,7 +48,6 @@ function getJapaneseHoliday(year: number, month: number, day: number): string | 
     if (month === 10 && nthWeek === 2) return "スポーツの日";
   }
 
-  // 春分の日・秋分の日 (簡易計算)
   if (month === 3 && day === Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4))) {
     return "春分の日";
   }
@@ -58,6 +56,33 @@ function getJapaneseHoliday(year: number, month: number, day: number): string | 
   }
 
   return null;
+}
+
+// 予定が指定日に該当するか判定
+function isEventOnDate(event: Event, targetDateStr: string): boolean {
+  const targetDate = new Date(targetDateStr);
+  const start = new Date(event.startDate);
+
+  if (targetDate < new Date(event.startDate.slice(0, 10))) return false;
+
+  if (!event.repeat || event.repeat === "none") {
+    return targetDateStr >= event.startDate && targetDateStr <= event.endDate;
+  }
+
+  const diffTime = targetDate.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+
+  if (event.repeat === "weekly") {
+    return diffDays >= 0 && diffDays % 7 === 0;
+  }
+  if (event.repeat === "monthly") {
+    return targetDate.getDate() === start.getDate();
+  }
+  if (event.repeat === "yearly") {
+    return targetDate.getMonth() === start.getMonth() && targetDate.getDate() === start.getDate();
+  }
+
+  return false;
 }
 
 export function Calendar() {
@@ -69,21 +94,38 @@ export function Calendar() {
   const [selectedColor, setSelectedColor] = useState("#8a2be2");
   const [selectedDate, setSelectedDate] = useState<string | null>(todayStr);
 
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: "1",
-      category: "学校",
-      title: "卒研打ち合わせ",
-      allDay: false,
-      startDate: todayStr,
-      endDate: todayStr,
-      startTime: "09:00",
-      endTime: "14:30",
-      repeat: "none",
-      memo: "ゼミ室にて進捗報告",
-      color: "#8a2be2",
-    },
-  ]);
+  // 【追加機能】localStorageから予定データを初期ロード
+  const [events, setEvents] = useState<Event[]>(() => {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("データの読み込みに失敗しました", e);
+      }
+    }
+    // 初期サンプルデータ
+    return [
+      {
+        id: "1",
+        category: "学校",
+        title: "卒研打ち合わせ",
+        allDay: false,
+        startDate: todayStr,
+        endDate: todayStr,
+        startTime: "09:00",
+        endTime: "14:30",
+        repeat: "weekly",
+        memo: "ゼミ室にて進捗報告",
+        color: "#8a2be2",
+      },
+    ];
+  });
+
+  // 【追加機能】events変更時に自動保存
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(events));
+  }, [events]);
 
   const [isListModalOpen, setIsListModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -100,6 +142,7 @@ export function Calendar() {
   const [repeat, setRepeat] = useState<Event["repeat"]>("none");
   const [memo, setMemo] = useState("");
   const [eventColor, setEventColor] = useState("#8a2be2");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const touchStartX = useRef<number>(0);
 
@@ -141,6 +184,7 @@ export function Calendar() {
     setRepeat("none");
     setMemo("");
     setEventColor(selectedColor);
+    setErrorMessage(null);
     setIsListModalOpen(false);
     setIsFormModalOpen(true);
   };
@@ -157,6 +201,7 @@ export function Calendar() {
     setRepeat(event.repeat);
     setMemo(event.memo);
     setEventColor(event.color || "#8a2be2");
+    setErrorMessage(null);
     setIsListModalOpen(false);
     setIsFormModalOpen(true);
   };
@@ -164,11 +209,24 @@ export function Calendar() {
   const handleCloseForm = () => {
     setIsFormModalOpen(false);
     setEditingEventId(null);
+    setErrorMessage(null);
   };
 
   const handleSaveEvent = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
+
     if (!title.trim()) return;
+
+    if (endDate < startDate) {
+      setErrorMessage("終了日は開始日以降の日付を指定してください。");
+      return;
+    }
+
+    if (!allDay && startDate === endDate && endTime <= startTime) {
+      setErrorMessage("終了時刻は開始時刻より後の時間を指定してください。");
+      return;
+    }
 
     if (editingEventId) {
       setEvents((prev) =>
@@ -231,8 +289,8 @@ export function Calendar() {
     }
   };
 
-  const selectedDayEvents = events.filter(
-    (ev) => selectedDate && selectedDate >= ev.startDate && selectedDate <= ev.endDate
+  const selectedDayEvents = events.filter((ev) =>
+    selectedDate ? isEventOnDate(ev, selectedDate) : false
   );
 
   return (
@@ -284,9 +342,7 @@ export function Calendar() {
             const isSelected = selectedDate === dateStr;
             const holidayName = getJapaneseHoliday(currentYear, currentMonth, day);
 
-            const dayEvents = events.filter(
-              (ev) => dateStr >= ev.startDate && dateStr <= ev.endDate
-            );
+            const dayEvents = events.filter((ev) => isEventOnDate(ev, dateStr));
 
             return (
               <div
@@ -303,25 +359,21 @@ export function Calendar() {
 
                 <div className="cell-event-list">
                   {dayEvents.map((ev) => {
-                    const isStart = ev.startDate === dateStr;
-                    const isEnd = ev.endDate === dateStr;
-                    const isMultiDay = ev.startDate !== ev.endDate;
+                    const isMultiDay = ev.startDate !== ev.endDate && ev.repeat === "none";
 
                     return (
                       <div
-                        key={ev.id}
-                        className={`cell-event-tag ${isMultiDay ? "is-span-event" : ""} ${isStart ? "span-start" : ""} ${isEnd ? "span-end" : ""}`}
+                        key={ev.id + dateStr}
+                        className={`cell-event-tag ${isMultiDay ? "is-span-event" : ""}`}
                         style={{
                           backgroundColor: ev.color ? `${ev.color}25` : "rgba(138, 43, 226, 0.15)",
                           borderLeftColor: ev.color || "#8a2be2",
                           color: ev.color || "#222",
                         }}
                       >
-                        {isStart && !ev.allDay && (
-                          <span className="tag-time">{ev.startTime}</span>
-                        )}
+                        {!ev.allDay && <span className="tag-time">{ev.startTime}</span>}
                         <span className="tag-title">
-                          {isMultiDay && !isStart ? "↳ " : ""}{ev.title}
+                          {ev.repeat !== "none" ? "🔄 " : ""}{ev.title}
                         </span>
                       </div>
                     );
@@ -352,7 +404,7 @@ export function Calendar() {
                         style={{ borderLeft: `6px solid ${ev.color || "#8a2be2"}` }}
                         onClick={() => handleOpenEditForm(ev)}
                         onTouchStart={handleTouchStart}
-                        onTouchEnd={(e) => handleTouchEnd(e, ev.id)}
+                        onTouchEnd={() => handleDeleteEvent(ev.id)}
                       >
                         <div className="event-card-top">
                           <span
@@ -365,6 +417,13 @@ export function Calendar() {
                             {ev.category}
                           </span>
                           <strong>{ev.title}</strong>
+                          {ev.repeat !== "none" && (
+                            <span className="repeat-badge">
+                              {ev.repeat === "weekly" && "毎週"}
+                              {ev.repeat === "monthly" && "毎月"}
+                              {ev.repeat === "yearly" && "毎年"}
+                            </span>
+                          )}
                         </div>
                         <div className="event-card-time">
                           {ev.startDate !== ev.endDate
@@ -389,7 +448,7 @@ export function Calendar() {
           </div>
         )}
 
-        {/* 2. 編集画面モーダル（サイズ大きめ） */}
+        {/* 予定作成・編集モーダル */}
         {isFormModalOpen && (
           <div className="modal-overlay" onClick={handleCloseForm}>
             <div className="modal-box form-modal-box large-modal" onClick={(e) => e.stopPropagation()}>
@@ -400,6 +459,12 @@ export function Calendar() {
                 </div>
 
                 <div className="modal-body form-stack">
+                  {errorMessage && (
+                    <div className="error-alert">
+                      ⚠ {errorMessage}
+                    </div>
+                  )}
+
                   <div className="field-group">
                     <label>カラー指定</label>
                     <div className="color-picker-row">
@@ -454,7 +519,12 @@ export function Calendar() {
                       <input
                         type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
+                        onChange={(e) => {
+                          setStartDate(e.target.value);
+                          if (endDate < e.target.value) {
+                            setEndDate(e.target.value);
+                          }
+                        }}
                         required
                       />
                     </div>
@@ -462,6 +532,7 @@ export function Calendar() {
                       <label>終了日</label>
                       <input
                         type="date"
+                        min={startDate}
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         required
@@ -497,9 +568,9 @@ export function Calendar() {
                       onChange={(e) => setRepeat(e.target.value as Event["repeat"])}
                     >
                       <option value="none">なし</option>
-                      <option value="daily">毎日</option>
                       <option value="weekly">毎週</option>
                       <option value="monthly">毎月</option>
+                      <option value="yearly">毎年</option>
                     </select>
                   </div>
 
