@@ -50,6 +50,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .calendar-header {
@@ -110,7 +111,6 @@
   background: var(--border, #e5e4e7);
 }
 
-/* セルスタイル */
 .calendar-cell {
   background: #ffffff;
   min-height: 100px;
@@ -118,7 +118,7 @@
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  box-sizing: border-border-box;
+  box-sizing: border-box;
   position: relative;
 }
 
@@ -127,12 +127,10 @@
   cursor: default;
 }
 
-/* 今日の日付の強調背景 */
 .calendar-cell.is-today {
   background: #f0f7ff;
 }
 
-/* 選択された日付の枠線強調（差別化） */
 .calendar-cell.is-selected {
   outline: 3px solid #8a2be2;
   outline-offset: -3px;
@@ -171,13 +169,12 @@
   gap: 4px;
 }
 
-/* 予定タグの文字を濃く・見やすく調整 */
 .cell-event-tag {
   font-size: 0.78rem;
   padding: 3px 6px;
   border-radius: 4px;
   border-left: 4px solid #8a2be2;
-  font-weight: 700; /* 文字を濃く太字に */
+  font-weight: 700;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -185,28 +182,19 @@
   gap: 4px;
 }
 
-.cell-event-tag.is-span-event {
-  border-radius: 0;
-  border-left-width: 0;
-  margin: 0 -4px;
-  padding-left: 8px;
-}
-
-.cell-event-tag.is-span-event.span-start {
-  border-top-left-radius: 4px;
-  border-bottom-left-radius: 4px;
-  border-left: 4px solid;
-  margin-left: 0;
-}
-
-.cell-event-tag.is-span-event.span-end {
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
-  margin-right: 0;
-}
-
 .tag-time {
   font-weight: 800;
+}
+
+/* エラーアラート表示 */
+.error-alert {
+  background-color: #fff5f5;
+  color: #c53030;
+  border: 1px solid #feb2b2;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 /* モーダル表示 */
@@ -218,11 +206,12 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 12px;
 }
 
 .modal-box {
   background: #ffffff;
-  width: 92%;
+  width: 100%;
   max-width: 560px;
   border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
@@ -230,9 +219,8 @@
   border: 1px solid #e5e4e7;
 }
 
-/* 編集画面モーダル（サイズ拡張） */
 .modal-box.large-modal {
-  max-width: 640px; /* 横幅を拡大 */
+  max-width: 640px;
 }
 
 .modal-header {
@@ -284,10 +272,10 @@
 .field-group input,
 .field-group select,
 .field-group textarea {
-  padding: 12px 16px; /* パディングを拡大 */
+  padding: 12px 16px;
   border: 1.5px solid #ccc;
   border-radius: 8px;
-  font-size: 1.05rem; /* 入力文字サイズを拡大 */
+  font-size: 1rem;
   background: #fff;
   color: #111;
 }
@@ -347,7 +335,7 @@
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -358,7 +346,7 @@
   border: none;
   padding: 12px 20px;
   border-radius: 8px;
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -375,4 +363,81 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+.repeat-badge {
+  font-size: 0.75rem;
+  background: #edf2f7;
+  color: #4a5568;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+/* ===================================================
+   📱 スマホ・タブレット用 レスポンシブスタイル
+   =================================================== */
+@media (max-width: 768px) {
+  .calendar-layout-wrapper {
+    flex-direction: column;
+  }
+
+  .color-palette-sidebar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+  }
+
+  .color-picker-list {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .calendar-cell {
+    min-height: 70px;
+    padding: 4px 2px;
+  }
+
+  .cell-day-number {
+    font-size: 0.8rem;
+  }
+
+  .holiday-label {
+    display: none; /* スマホ画面では祝日文字を省略してすっきり化 */
+  }
+
+  .cell-event-tag {
+    font-size: 0.7rem;
+    padding: 2px 4px;
+  }
+
+  .field-row {
+    flex-direction: column; /* フォームの入力項目を1列にする */
+    gap: 12px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-cell {
+    min-height: 58px;
+  }
+
+  .tag-time {
+    display: none; /* 非常に狭い画面では時刻表記を隠してタイトルを優先表示 */
+  }
+
+  .month-control h2 {
+    font-size: 1.1rem;
+    min-width: 100px;
+  }
 }
