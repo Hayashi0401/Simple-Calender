@@ -125,3 +125,59 @@
   background: #eee;
   color: #333;
 }
+
+/* メモ・予定の関連付け用の追加スタイル */
+.memo-input-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.memo-event-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text, #666);
+}
+
+.memo-event-select-row select {
+  padding: 4px 8px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.memo-content-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.linked-event-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  background: #f0f7ff;
+  color: #3182ce;
+  border: 1px solid #bee3f8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.memo-edit-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.loading-text,
+.empty-text {
+  font-size: 0.9rem;
+  color: #888;
+  text-align: center;
+  padding: 12px;
+}
