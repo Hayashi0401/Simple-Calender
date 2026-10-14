@@ -104,6 +104,46 @@
 .weekday.sun { color: #e53e3e; }
 .weekday.sat { color: #3182ce; }
 
+/* 修正後：Calendar.css に追加・更新 */
+.event-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px; /* 予定と予定の間に14pxの空きを設定 */
+}
+
+.event-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e4e7;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.event-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.event-card-time {
+  font-size: 0.88rem;
+  color: #666;
+}
+
+.event-card-memo {
+  margin: 6px 0 0 0;
+  font-size: 0.85rem;
+  color: #444;
+}
+
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -113,13 +153,14 @@
 
 .calendar-cell {
   background: #ffffff;
-  min-height: 100px;
+  height: 110px; /* min-height から固定値 height に変更 */
   padding: 6px 4px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   position: relative;
+  overflow: hidden; /* マス目からはみ出た予定は収める */
 }
 
 .calendar-cell.empty {
@@ -167,6 +208,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow-y: auto; /* マス目内の予定が多くなったらマス内でスクロール */
+  max-height: calc(100% - 24px); /* 日付ヘッダー分の高さを除外 */
 }
 
 .cell-event-tag {
@@ -395,7 +438,7 @@
   }
 
   .calendar-cell {
-    min-height: 70px;
+    min-height: 80px;
     padding: 4px 2px;
   }
 
@@ -429,7 +472,7 @@
 
 @media (max-width: 480px) {
   .calendar-cell {
-    min-height: 58px;
+    height: 65px
   }
 
   .tag-time {
