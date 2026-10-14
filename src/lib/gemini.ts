@@ -41,6 +41,7 @@ ${memos.length === 0 ? "なし" : memos.map((m) => `- ${m.content}`).join("\n")}
 
 【制約事項】
 ・箇条書き（「・」始まり）で2〜3個提案してください。
+・時刻を入れる場合は「14:30」のように省略せず数字から書いてください。
 ・1文は短く、分かりやすい日本語で書いてください。
 ・前置きや挨拶は不要です。提案内容のみを出力してください。
 `;
@@ -50,9 +51,9 @@ ${memos.length === 0 ? "なし" : memos.map((m) => `- ${m.content}`).join("\n")}
 
     // 箇条書きを行ごとに分割して配列化
     const suggestions = text
-      .split("\n")
-      .map((line) => line.replace(/^[・*-\d.\s]+/, "").trim())
-      .filter((line) => line.length > 0);
+        .split("\n")
+        .map((line) => line.replace(/^[・*-\s]+|^\d+\.\s*/, "").trim())
+        .filter((line) => line.length > 0);
 
     return suggestions.length > 0
       ? suggestions
