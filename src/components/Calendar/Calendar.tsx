@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect} from "react";
 import "./Calendar.css";
 import { supabase } from "../../lib/supabase";
 
@@ -157,7 +157,6 @@ export function Calendar() {
   const [eventColor, setEventColor] = useState("#8a2be2");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const touchStartX = useRef<number>(0);
 
   const handlePrevMonth = () => {
     if (currentMonth === 1) {
@@ -298,17 +297,6 @@ export function Calendar() {
     }
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent, id: string) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    if (touchStartX.current - touchEndX > 50) {
-      handleDeleteEvent(id);
-    }
-  };
-
   const selectedDayEvents = events.filter((ev) =>
     selectedDate ? isEventOnDate(ev, selectedDate) : false
   );
@@ -427,8 +415,6 @@ export function Calendar() {
                         className="event-card clickable"
                         style={{ borderLeft: `6px solid ${ev.color || "#8a2be2"}` }}
                         onClick={() => handleOpenEditForm(ev)}
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={() => handleDeleteEvent(ev.id)}
                       >
                         <div className="event-card-top">
                           <span
@@ -457,7 +443,6 @@ export function Calendar() {
                             : `${ev.startTime} 〜 ${ev.endTime}`}
                         </div>
                         {ev.memo && <p className="event-card-memo">{ev.memo}</p>}
-                        <span className="swipe-hint">← スワイプで削除</span>
                       </div>
                     ))}
                   </div>
