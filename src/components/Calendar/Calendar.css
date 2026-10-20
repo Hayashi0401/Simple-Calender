@@ -1,49 +1,8 @@
+/* src/components/Calendar/Calendar.css */
 .calendar-layout-wrapper {
   display: flex;
-  gap: 16px;
   width: 100%;
-}
-
-.color-palette-sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: var(--code-bg, #f4f3ec);
-  border-radius: 12px;
-  border: 1px solid var(--border, #e5e4e7);
-}
-
-.color-palette-sidebar h4 {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text, #666);
-  text-align: center;
-}
-
-.color-picker-list,
-.color-picker-row {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.color-picker-row {
-  flex-direction: row;
-}
-
-.color-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s;
-}
-
-.color-btn.is-active {
-  border-color: #000;
-  transform: scale(1.15);
+  position: relative;
 }
 
 .calendar-container {
@@ -51,13 +10,15 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* PCでのスクロールやマウス操作を完全に通すための設定 */
+  overflow: visible; 
 }
 
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 14px 16px;
   background-color: var(--code-bg, #f4f3ec);
   border-bottom: 1px solid var(--border, #e5e4e7);
   border-radius: 12px 12px 0 0;
@@ -71,8 +32,8 @@
 
 .month-control h2 {
   margin: 0;
-  font-size: 1.3rem;
-  min-width: 130px;
+  font-size: 1.2rem;
+  min-width: 120px;
   text-align: center;
 }
 
@@ -84,6 +45,9 @@
   height: 32px;
   font-size: 1.2rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .calendar-week {
@@ -94,9 +58,9 @@
 }
 
 .weekday {
-  padding: 10px 0;
+  padding: 8px 0;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #6b6375;
 }
@@ -104,44 +68,32 @@
 .weekday.sun { color: #e53e3e; }
 .weekday.sat { color: #3182ce; }
 
-/* 修正後：Calendar.css に追加・更新 */
-.event-card-list {
+/* ＝ カラーパレット（カラー指定）のスタイル ＝ */
+.color-picker-row {
   display: flex;
-  flex-direction: column;
-  gap: 14px; /* 予定と予定の間に14pxの空きを設定 */
-}
-
-.event-card {
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 14px 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e5e4e7;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.event-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.event-card-top {
-  display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  margin-top: 4px;
 }
 
-.event-card-time {
-  font-size: 0.88rem;
-  color: #666;
+.color-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+  padding: 0;
 }
 
-.event-card-memo {
-  margin: 6px 0 0 0;
-  font-size: 0.85rem;
-  color: #444;
+.color-btn:hover {
+  transform: scale(1.1);
+}
+
+.color-btn.is-active {
+  border-color: #111;
+  transform: scale(1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .calendar-grid {
@@ -153,14 +105,16 @@
 
 .calendar-cell {
   background: #ffffff;
-  height: 110px; /* min-height から固定値 height に変更 */
+  height: 110px;       /* 基準の高さ */
+  min-height: 110px;   /* 縮まないように固定 */
+  max-height: 110px;   /* どんなに予定が多くても絶対に広がらないように固定 */
   padding: 6px 4px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   position: relative;
-  overflow: hidden; /* マス目からはみ出た予定は収める */
+  overflow: hidden;    /* はみ出た要素をしっかり隠す */
 }
 
 .calendar-cell.empty {
@@ -173,8 +127,8 @@
 }
 
 .calendar-cell.is-selected {
-  outline: 3px solid #8a2be2;
-  outline-offset: -3px;
+  outline: 2px solid #8a2be2;
+  outline-offset: -2px;
   z-index: 2;
 }
 
@@ -182,12 +136,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
-  padding: 0 4px;
+  margin-bottom: 2px;
+  padding: 0 2px;
+  flex-shrink: 0;
 }
 
 .cell-day-number {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: bold;
 }
 
@@ -196,7 +151,7 @@
 }
 
 .holiday-label {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   color: #e53e3e;
   font-weight: 600;
   white-space: nowrap;
@@ -207,67 +162,105 @@
 .cell-event-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  overflow-y: auto; /* マス目内の予定が多くなったらマス内でスクロール */
-  max-height: calc(100% - 24px); /* 日付ヘッダー分の高さを除外 */
+  gap: 3px;
+  overflow-y: auto;     /* 予定が多くなったらこの中でスクロール */
+  flex: 1;              /* 残りの高さを綺麗に埋める */
+  min-height: 0;        /* フレックスボックス内でのスクロール崩れを防ぐおまじない */
 }
 
 .cell-event-tag {
-  font-size: 0.78rem;
-  padding: 3px 6px;
+  font-size: 0.72rem;
+  padding: 2px 4px;
   border-radius: 4px;
-  border-left: 4px solid #8a2be2;
-  font-weight: 700;
+  border-left: 3px solid #8a2be2;
+  font-weight: 600;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   display: flex;
-  gap: 4px;
+  gap: 3px;
 }
 
 .tag-time {
-  font-weight: 800;
+  font-weight: 700;
 }
 
-/* エラーアラート表示 */
-.error-alert {
-  background-color: #fff5f5;
-  color: #c53030;
-  border: 1px solid #feb2b2;
-  padding: 10px 14px;
+/* 予定一覧のカードリスト */
+.event-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-card {
+  background: #ffffff;
   border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  padding: 12px 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e4e7;
+  cursor: pointer;
 }
 
-/* モーダル表示 */
+.event-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.category-tag {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.event-card-time {
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.event-card-memo {
+  margin: 4px 0 0 0;
+  font-size: 0.82rem;
+  color: #444;
+}
+
+/* モーダル関連 */
 .modal-overlay {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 12px;
+  z-index: 9999;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .modal-box {
   background: #ffffff;
   width: 100%;
-  max-width: 560px;
+  max-width: 520px;
   border-radius: 14px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   border: 1px solid #e5e4e7;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
 }
 
 .modal-box.large-modal {
-  max-width: 640px;
+  max-width: 600px;
 }
 
 .modal-header {
-  padding: 18px 24px;
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -277,27 +270,29 @@
 
 .modal-header h3 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.15rem;
 }
 
 .icon-close-btn {
   background: none;
   border: none;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   cursor: pointer;
   color: #666;
+  padding: 0;
+  line-height: 1;
 }
 
 .modal-body {
-  padding: 24px;
-  max-height: 75vh;
+  padding: 14px 20px;
   overflow-y: auto;
+  flex: 1;
 }
 
 .form-stack {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
 }
 
 .field-group {
@@ -307,7 +302,7 @@
 }
 
 .field-group label {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #111;
 }
@@ -315,10 +310,10 @@
 .field-group input,
 .field-group select,
 .field-group textarea {
-  padding: 12px 16px;
+  padding: 10px 14px;
   border: 1.5px solid #ccc;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   background: #fff;
   color: #111;
 }
@@ -335,14 +330,14 @@
 .field-checkbox label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.05rem;
+  gap: 8px;
+  font-size: 1rem;
   cursor: pointer;
 }
 
 .field-checkbox input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   cursor: pointer;
 }
 
@@ -351,7 +346,7 @@
 }
 
 .modal-footer {
-  padding: 16px 24px;
+  padding: 14px 20px;
   border-top: 1px solid #e5e4e7;
   background: #fafafa;
 }
@@ -369,16 +364,16 @@
 
 .right-action-buttons {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .btn-primary {
   background: #8a2be2;
   color: #fff;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -387,9 +382,9 @@
   background: #e53e3e;
   color: #fff;
   border: none;
-  padding: 12px 20px;
+  padding: 10px 16px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -398,10 +393,10 @@
   background: none;
   border: 1.5px solid #ccc;
   color: #666;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -409,7 +404,7 @@
 }
 
 .repeat-badge {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   background: #edf2f7;
   color: #4a5568;
   padding: 2px 6px;
@@ -417,70 +412,40 @@
   margin-left: 6px;
 }
 
-/* ===================================================
-   📱 スマホ・タブレット用 レスポンシブスタイル
-   =================================================== */
+.empty-text {
+  color: #666;
+  text-align: center;
+  padding: 16px 0;
+  margin: 0;
+}
+
+/* スマホ用サイズ調整 */
 @media (max-width: 768px) {
-  .calendar-layout-wrapper {
-    flex-direction: column;
-  }
-
-  .color-palette-sidebar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-  }
-
-  .color-picker-list {
-    flex-direction: row;
-    gap: 8px;
-  }
-
   .calendar-cell {
-    min-height: 80px;
+    height: 90px;
     padding: 4px 2px;
   }
-
   .cell-day-number {
     font-size: 0.8rem;
   }
-
   .holiday-label {
-    display: none; /* スマホ画面では祝日文字を省略してすっきり化 */
+    display: none;
   }
-
   .cell-event-tag {
-    font-size: 0.7rem;
-    padding: 2px 4px;
-  }
-
-  .field-row {
-    flex-direction: column; /* フォームの入力項目を1列にする */
-    gap: 12px;
-  }
-
-  .modal-body {
-    padding: 16px;
-  }
-
-  .modal-header,
-  .modal-footer {
-    padding: 12px 16px;
+    font-size: 0.68rem;
+    padding: 2px 3px;
   }
 }
 
 @media (max-width: 480px) {
   .calendar-cell {
-    height: 65px
+    height: 85px;
   }
-
   .tag-time {
-    display: none; /* 非常に狭い画面では時刻表記を隠してタイトルを優先表示 */
+    display: none;
   }
-
   .month-control h2 {
-    font-size: 1.1rem;
-    min-width: 100px;
+    font-size: 1.05rem;
+    min-width: 90px;
   }
 }
