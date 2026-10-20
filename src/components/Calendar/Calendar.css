@@ -229,30 +229,41 @@
 /* モーダル関連 */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+
   background: rgba(0, 0, 0, 0.45);
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   z-index: 9999;
-  padding: 16px;
+  padding: 8px;
   box-sizing: border-box;
+
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 .modal-box {
   background: #ffffff;
   width: 100%;
   max-width: 520px;
+
+  max-height: calc(100% - 16px);
+  min-height: 0;
+
   border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
   border: 1px solid #e5e4e7;
+
   display: flex;
   flex-direction: column;
-  max-height: 85vh;
+  overflow: hidden;
+  flex-shrink: 1;
 }
 
 .modal-box.large-modal {
@@ -284,13 +295,47 @@
 }
 
 .modal-body {
-  padding: 16px 20px;
-  /* 🌟 追加：中身が多い場合にここがスクロールするようにする */
-  overflow-y: auto; 
-  -webkit-overflow-scrolling: touch; /* スマホで滑らかにスクロールさせる */
-  flex: 1;
-  min-height: 0; /* 潰れ防止 */
+  padding: 16px 18px;
+
+  flex: 1 1 auto;
+  min-height: 0;
+
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
+
+/* ＝ モーダルヘッダー内の右側アクション群 ＝ */
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ヘッダー用の小さめ保存ボタン */
+.btn-primary-sm {
+  background: #8a2be2;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ヘッダー用の小さめ削除ボタン */
+.btn-danger-sm {
+  background: #e53e3e;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 
 .form-stack {
   display: flex;
@@ -352,6 +397,7 @@
   padding: 14px 20px;
   border-top: 1px solid #e5e4e7;
   background: #fafafa;
+  flex-shrink: 0;
 }
 
 .modal-footer.justify-end {
@@ -422,6 +468,7 @@
   margin: 0;
 }
 
+/* スマホ用サイズ調整 */
 /* スマホ用サイズ調整 */
 @media (max-width: 768px) {
   .calendar-cell {
