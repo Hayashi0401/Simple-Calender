@@ -1,5 +1,7 @@
 /* src/index.css */
-html, body {
+
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -7,15 +9,18 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* スマホやタブレット（画面幅768px以下）のときだけ、上下のバウンスをガードする */
-@media (max-width: 768px) {
-  html, body {
-    overscroll-behavior-y: auto;
-  }
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
 }

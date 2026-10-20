@@ -452,9 +452,25 @@ export function Calendar() {
         <div className="modal-overlay" onClick={handleCloseForm}>
           <div className="modal-box form-modal-box large-modal" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSaveEvent}>
-              <div className="modal-header">
+<div className="modal-header">
                 <h3>{editingEventId ? "予定の編集" : "新規予定作成"}</h3>
-                <button type="button" className="icon-close-btn" onClick={handleCloseForm}>×</button>
+                <div className="modal-header-actions">
+                  {editingEventId && (
+                    <button
+                      type="button"
+                      className="btn-danger-sm"
+                      onClick={() => handleDeleteEvent(editingEventId)}
+                    >
+                      削除
+                    </button>
+                  )}
+                  <button type="submit" className="btn-primary-sm">
+                    保存
+                  </button>
+                  <button type="button" className="icon-close-btn" onClick={handleCloseForm}>
+                    ✕
+                  </button>
+                </div>
               </div>
 
               <div className="modal-body form-stack">
@@ -581,32 +597,6 @@ export function Calendar() {
                     onChange={(e) => setMemo(e.target.value)}
                     placeholder="詳細やメモを入力"
                   />
-                </div>
-              </div>
-
-              <div className="modal-footer split-footer">
-                <button
-                  type="button"
-                  className="btn-cancel-icon"
-                  onClick={handleCloseForm}
-                  title="キャンセル"
-                >
-                  ✕
-                </button>
-
-                <div className="right-action-buttons">
-                  {editingEventId && (
-                    <button
-                      type="button"
-                      className="btn-danger"
-                      onClick={() => handleDeleteEvent(editingEventId)}
-                    >
-                      削除
-                    </button>
-                  )}
-                  <button type="submit" className="btn-primary">
-                    保存
-                  </button>
                 </div>
               </div>
             </form>
