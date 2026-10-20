@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+/* src/components/Calendar/Calendar.tsx */
+import { useState, useEffect } from "react";
 import "./Calendar.css";
 import { supabase } from "../../lib/supabase";
 
@@ -24,7 +25,6 @@ const COLOR_OPTIONS = [
   { label: "レッド", value: "#c53030" },
 ];
 
-// 日本の祝日判定関数
 function getJapaneseHoliday(year: number, month: number, day: number): string | null {
   const dayOfWeek = new Date(year, month - 1, day).getDay();
   const nthWeek = Math.ceil(day / 7);
@@ -57,7 +57,6 @@ function getJapaneseHoliday(year: number, month: number, day: number): string | 
   return null;
 }
 
-// 予定が指定日に該当するか判定
 function isEventOnDate(event: Event, targetDateStr: string): boolean {
   const targetDate = new Date(targetDateStr);
   const start = new Date(event.startDate);
@@ -90,16 +89,16 @@ export function Calendar() {
 
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth() + 1);
-  const [selectedColor, setSelectedColor] = useState("#8a2be2");
   const [selectedDate, setSelectedDate] = useState<string | null>(todayStr);
 
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Supabaseから予定データ一覧を取得
+  // スワイプ判定用
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
   const fetchEvents = async () => {
     setIsLoading(true);
-
     try {
       const { data, error } = await supabase
         .from("events")
@@ -125,7 +124,6 @@ export function Calendar() {
           memo: item.memo ?? "",
           color: item.color ?? "#8a2be2",
         }));
-
         setEvents(formattedEvents);
       }
     } catch (error) {
@@ -135,7 +133,6 @@ export function Calendar() {
     }
   };
 
-  // コンポーネントの初回表示時に取得
   useEffect(() => {
     fetchEvents();
   }, []);
@@ -144,7 +141,6 @@ export function Calendar() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
-  // フォームステート
   const [category, setCategory] = useState("学校");
   const [title, setTitle] = useState("");
   const [allDay, setAllDay] = useState(false);
@@ -156,8 +152,6 @@ export function Calendar() {
   const [memo, setMemo] = useState("");
   const [eventColor, setEventColor] = useState("#8a2be2");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const touchStartX = useRef<number>(0);
 
   const handlePrevMonth = () => {
     if (currentMonth === 1) {
@@ -175,6 +169,26 @@ export function Calendar() {
     } else {
       setCurrentMonth(currentMonth + 1);
     }
+  };
+
+  /* 👈 👉 スマホのスワイプ検知 */
+  const handleTouchStart = (e: any) => {
+    if (e.touches && e.touches.length > 0) {
+      setTouchStartX(e.touches[0].clientX);
+    }
+  };
+
+  const handleTouchEnd = (e: any) => {
+    if (touchStartX === null || !e.changedTouches || e.changedTouches.length === 0) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchStartX - touchEndX;
+
+    if (diffX > 60) {
+      handleNextMonth();
+    } else if (diffX < -60) {
+      handlePrevMonth();
+    }
+    setTouchStartX(null);
   };
 
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
@@ -196,7 +210,7 @@ export function Calendar() {
     setEndTime("10:00");
     setRepeat("none");
     setMemo("");
-    setEventColor(selectedColor);
+    setEventColor("#8a2be2");
     setErrorMessage(null);
     setIsListModalOpen(false);
     setIsFormModalOpen(true);
@@ -225,7 +239,6 @@ export function Calendar() {
     setErrorMessage(null);
   };
 
-  // 保存処理（新規登録・更新）
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -256,56 +269,35 @@ export function Calendar() {
     };
 
     if (editingEventId) {
-      // DB更新 (Update)
-      const { error } = await supabase
-        .from("events")
-        .update(payload)
-        .eq("id", editingEventId);
-
+      const { error } = await supabase.from("events").update(payload).eq("id", editingEventId);
       if (error) {
         setErrorMessage("更新に失敗しました: " + error.message);
         return;
       }
     } else {
-      // DB新規挿入 (Insert)
       const { error } = await supabase.from("events").insert([payload]);
-
       if (error) {
         setErrorMessage("保存に失敗しました: " + error.message);
         return;
       }
     }
 
-    await fetchEvents(); // 最新データを再取得
+    await fetchEvents();
     setIsFormModalOpen(false);
     setEditingEventId(null);
   };
 
-  // 削除処理
   const handleDeleteEvent = async (id: string) => {
     if (confirm("この予定を削除してもよろしいですか？")) {
       const { error } = await supabase.from("events").delete().eq("id", id);
-
       if (error) {
         alert("削除に失敗しました: " + error.message);
         return;
       }
-
-      await fetchEvents(); // 最新データを再取得
+      await fetchEvents();
       setIsFormModalOpen(false);
       setIsListModalOpen(false);
       setEditingEventId(null);
-    }
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent, id: string) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    if (touchStartX.current - touchEndX > 50) {
-      handleDeleteEvent(id);
     }
   };
 
@@ -315,33 +307,18 @@ export function Calendar() {
 
   return (
     <div className="calendar-layout-wrapper">
-      <aside className="color-palette-sidebar">
-        <h4>予定の色</h4>
-        <div className="color-picker-list">
-          {COLOR_OPTIONS.map((c) => (
-            <button
-              key={c.value}
-              className={`color-btn ${selectedColor === c.value ? "is-active" : ""}`}
-              style={{ backgroundColor: c.value }}
-              onClick={() => setSelectedColor(c.value)}
-              title={c.label}
-            />
-          ))}
-        </div>
-      </aside>
-
-      <div className="calendar-container">
+      <div
+        className="calendar-container"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="calendar-header">
           <div className="month-control">
             <button className="nav-btn" onClick={handlePrevMonth}>‹</button>
             <h2>{currentYear}年 {currentMonth}月</h2>
             <button className="nav-btn" onClick={handleNextMonth}>›</button>
           </div>
-          {isLoading ? (
-            <span className="month-badge">読み込み中...</span>
-          ) : (
-            <span className="month-badge">月表示</span>
-          )}
+            {isLoading && <span className="month-badge">読み込み中...</span>}
         </div>
 
         <div className="calendar-week">
@@ -407,238 +384,235 @@ export function Calendar() {
             );
           })}
         </div>
+      </div>
 
-        {/* 予定一覧モーダル */}
-        {isListModalOpen && selectedDate && (
-          <div className="modal-overlay" onClick={() => setIsListModalOpen(false)}>
-            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>{selectedDate} の予定一覧</h3>
-                <button className="icon-close-btn" onClick={() => setIsListModalOpen(false)}>×</button>
-              </div>
-              <div className="modal-body">
-                {selectedDayEvents.length === 0 ? (
-                  <p className="empty-text">予定はありません</p>
-                ) : (
-                  <div className="event-card-list">
-                    {selectedDayEvents.map((ev) => (
-                      <div
-                        key={ev.id}
-                        className="event-card clickable"
-                        style={{ borderLeft: `6px solid ${ev.color || "#8a2be2"}` }}
-                        onClick={() => handleOpenEditForm(ev)}
-                        onTouchStart={handleTouchStart}
-                        onTouchEnd={() => handleDeleteEvent(ev.id)}
-                      >
-                        <div className="event-card-top">
-                          <span
-                            className="category-tag"
-                            style={{
-                              backgroundColor: `${ev.color || "#8a2be2"}25`,
-                              color: ev.color || "#8a2be2",
-                            }}
-                          >
-                            {ev.category}
+      {/* 予定一覧モーダル */}
+      {isListModalOpen && selectedDate && (
+        <div className="modal-overlay" onClick={() => setIsListModalOpen(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{selectedDate} の予定一覧</h3>
+              <button className="icon-close-btn" onClick={() => setIsListModalOpen(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {selectedDayEvents.length === 0 ? (
+                <p className="empty-text">予定はありません</p>
+              ) : (
+                <div className="event-card-list">
+                  {selectedDayEvents.map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="event-card clickable"
+                      style={{ borderLeft: `6px solid ${ev.color || "#8a2be2"}` }}
+                      onClick={() => handleOpenEditForm(ev)}
+                    >
+                      <div className="event-card-top">
+                        <span
+                          className="category-tag"
+                          style={{
+                            backgroundColor: `${ev.color || "#8a2be2"}25`,
+                            color: ev.color || "#8a2be2",
+                          }}
+                        >
+                          {ev.category}
+                        </span>
+                        <strong>{ev.title}</strong>
+                        {ev.repeat !== "none" && (
+                          <span className="repeat-badge">
+                            {ev.repeat === "weekly" && "毎週"}
+                            {ev.repeat === "monthly" && "毎月"}
+                            {ev.repeat === "yearly" && "毎年"}
                           </span>
-                          <strong>{ev.title}</strong>
-                          {ev.repeat !== "none" && (
-                            <span className="repeat-badge">
-                              {ev.repeat === "weekly" && "毎週"}
-                              {ev.repeat === "monthly" && "毎月"}
-                              {ev.repeat === "yearly" && "毎年"}
-                            </span>
-                          )}
-                        </div>
-                        <div className="event-card-time">
-                          {ev.startDate !== ev.endDate
-                            ? `${ev.startDate} 〜 ${ev.endDate}`
-                            : ev.allDay
-                            ? "終日"
-                            : `${ev.startTime} 〜 ${ev.endTime}`}
-                        </div>
-                        {ev.memo && <p className="event-card-memo">{ev.memo}</p>}
-                        <span className="swipe-hint">← スワイプで削除</span>
+                        )}
                       </div>
-                    ))}
+                      <div className="event-card-time">
+                        {ev.startDate !== ev.endDate
+                          ? `${ev.startDate} 〜 ${ev.endDate}`
+                          : ev.allDay
+                          ? "終日"
+                          : `${ev.startTime} 〜 ${ev.endTime}`}
+                      </div>
+                      {ev.memo && <p className="event-card-memo">{ev.memo}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer justify-end">
+              <button className="btn-primary" onClick={handleOpenNewForm}>
+                ＋ 予定を追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 予定作成・編集モーダル */}
+      {isFormModalOpen && (
+        <div className="modal-overlay" onClick={handleCloseForm}>
+          <div className="modal-box form-modal-box large-modal" onClick={(e) => e.stopPropagation()}>
+            <form onSubmit={handleSaveEvent}>
+              <div className="modal-header">
+                <h3>{editingEventId ? "予定の編集" : "新規予定作成"}</h3>
+                <button type="button" className="icon-close-btn" onClick={handleCloseForm}>×</button>
+              </div>
+
+              <div className="modal-body form-stack">
+                {errorMessage && (
+                  <div className="error-alert">
+                    ⚠ {errorMessage}
                   </div>
                 )}
-              </div>
-              <div className="modal-footer justify-end">
-                <button className="btn-primary" onClick={handleOpenNewForm}>
-                  ＋ 予定を追加
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* 予定作成・編集モーダル */}
-        {isFormModalOpen && (
-          <div className="modal-overlay" onClick={handleCloseForm}>
-            <div className="modal-box form-modal-box large-modal" onClick={(e) => e.stopPropagation()}>
-              <form onSubmit={handleSaveEvent}>
-                <div className="modal-header">
-                  <h3>{editingEventId ? "予定の編集" : "新規予定作成"}</h3>
-                  <button type="button" className="icon-close-btn" onClick={handleCloseForm}>×</button>
-                </div>
-
-                <div className="modal-body form-stack">
-                  {errorMessage && (
-                    <div className="error-alert">
-                      ⚠ {errorMessage}
-                    </div>
-                  )}
-
-                  <div className="field-group">
-                    <label>カラー指定</label>
-                    <div className="color-picker-row">
-                      {COLOR_OPTIONS.map((c) => (
-                        <button
-                          type="button"
-                          key={c.value}
-                          className={`color-btn ${eventColor === c.value ? "is-active" : ""}`}
-                          style={{ backgroundColor: c.value }}
-                          onClick={() => setEventColor(c.value)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="field-group">
-                    <label>カテゴリ</label>
-                    <input
-                      type="text"
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      placeholder="例：学校、仕事、プライベート"
-                    />
-                  </div>
-
-                  <div className="field-group">
-                    <label>タイトル <span className="req">*</span></label>
-                    <input
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="件名を入力"
-                      required
-                      autoFocus
-                    />
-                  </div>
-
-                  <div className="field-checkbox">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={allDay}
-                        onChange={(e) => setAllDay(e.target.checked)}
-                      />
-                      終日予定
-                    </label>
-                  </div>
-
-                  <div className="field-row">
-                    <div className="field-group">
-                      <label>開始日</label>
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => {
-                          setStartDate(e.target.value);
-                          if (endDate < e.target.value) {
-                            setEndDate(e.target.value);
-                          }
-                        }}
-                        required
-                      />
-                    </div>
-                    <div className="field-group">
-                      <label>終了日</label>
-                      <input
-                        type="date"
-                        min={startDate}
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {!allDay && (
-                    <div className="field-row">
-                      <div className="field-group">
-                        <label>開始時刻</label>
-                        <input
-                          type="time"
-                          value={startTime}
-                          onChange={(e) => setStartTime(e.target.value)}
-                        />
-                      </div>
-                      <div className="field-group">
-                        <label>終了時刻</label>
-                        <input
-                          type="time"
-                          value={endTime}
-                          onChange={(e) => setEndTime(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="field-group">
-                    <label>繰り返し</label>
-                    <select
-                      value={repeat}
-                      onChange={(e) => setRepeat(e.target.value as Event["repeat"])}
-                    >
-                      <option value="none">なし</option>
-                      <option value="weekly">毎週</option>
-                      <option value="monthly">毎月</option>
-                      <option value="yearly">毎年</option>
-                    </select>
-                  </div>
-
-                  <div className="field-group">
-                    <label>メモ</label>
-                    <textarea
-                      rows={3}
-                      value={memo}
-                      onChange={(e) => setMemo(e.target.value)}
-                      placeholder="詳細やメモを入力"
-                    />
-                  </div>
-                </div>
-
-                <div className="modal-footer split-footer">
-                  <button
-                    type="button"
-                    className="btn-cancel-icon"
-                    onClick={handleCloseForm}
-                    title="キャンセル"
-                  >
-                    ✕
-                  </button>
-
-                  <div className="right-action-buttons">
-                    {editingEventId && (
+                <div className="field-group">
+                  <label>カラー指定</label>
+                  <div className="color-picker-row">
+                    {COLOR_OPTIONS.map((c) => (
                       <button
                         type="button"
-                        className="btn-danger"
-                        onClick={() => handleDeleteEvent(editingEventId)}
-                      >
-                        削除
-                      </button>
-                    )}
-                    <button type="submit" className="btn-primary">
-                      保存
-                    </button>
+                        key={c.value}
+                        className={`color-btn ${eventColor === c.value ? "is-active" : ""}`}
+                        style={{ backgroundColor: c.value }}
+                        onClick={() => setEventColor(c.value)}
+                      />
+                    ))}
                   </div>
                 </div>
-              </form>
-            </div>
+
+                <div className="field-group">
+                  <label>カテゴリ</label>
+                  <input
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="例：学校、仕事、プライベート"
+                  />
+                </div>
+
+                <div className="field-group">
+                  <label>タイトル <span className="req">*</span></label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="件名を入力"
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div className="field-checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={allDay}
+                      onChange={(e) => setAllDay(e.target.checked)}
+                    />
+                    終日予定
+                  </label>
+                </div>
+
+                <div className="field-row">
+                  <div className="field-group">
+                    <label>開始日</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        if (endDate < e.target.value) {
+                          setEndDate(e.target.value);
+                        }
+                      }}
+                      required
+                    />
+                  </div>
+                  <div className="field-group">
+                    <label>終了日</label>
+                    <input
+                      type="date"
+                      min={startDate}
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {!allDay && (
+                  <div className="field-row">
+                    <div className="field-group">
+                      <label>開始時刻</label>
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => setStartTime(e.target.value)}
+                      />
+                    </div>
+                    <div className="field-group">
+                      <label>終了時刻</label>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => setEndTime(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="field-group">
+                  <label>繰り返し</label>
+                  <select
+                    value={repeat}
+                    onChange={(e) => setRepeat(e.target.value as Event["repeat"])}
+                  >
+                    <option value="none">なし</option>
+                    <option value="weekly">毎週</option>
+                    <option value="monthly">毎月</option>
+                    <option value="yearly">毎年</option>
+                  </select>
+                </div>
+
+                <div className="field-group">
+                  <label>メモ</label>
+                  <textarea
+                    rows={3}
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    placeholder="詳細やメモを入力"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer split-footer">
+                <button
+                  type="button"
+                  className="btn-cancel-icon"
+                  onClick={handleCloseForm}
+                  title="キャンセル"
+                >
+                  ✕
+                </button>
+
+                <div className="right-action-buttons">
+                  {editingEventId && (
+                    <button
+                      type="button"
+                      className="btn-danger"
+                      onClick={() => handleDeleteEvent(editingEventId)}
+                    >
+                      削除
+                    </button>
+                  )}
+                  <button type="submit" className="btn-primary">
+                    保存
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
