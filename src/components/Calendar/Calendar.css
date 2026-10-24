@@ -103,6 +103,26 @@
   background: var(--border, #e5e4e7);
 }
 
+/* 📖 スワイプ表示用のエリア */
+.calendar-swipe-viewport {
+  width: 100%;
+  overflow: hidden; /* はみ出た部分は隠す */
+  touch-action: pan-y; /* 上下の縦スクロールはブラウザに任せ、横方向のみJavaScriptで捉える */
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--border, #e5e4e7);
+  will-change: transform;
+}
+
+/* 🌟 指を離したときにシュッと戻ったり切り替わったりするアニメーション */
+.calendar-grid.is-animating {
+  transition: transform 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
 .calendar-cell {
   background: #ffffff;
   height: 110px;       /* 基準の高さ */
