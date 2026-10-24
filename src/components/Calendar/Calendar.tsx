@@ -1,5 +1,5 @@
 /* src/components/Calendar/Calendar.tsx */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./Calendar.css";
 import { supabase } from "../../lib/supabase";
 
@@ -94,8 +94,11 @@ export function Calendar() {
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // スワイプ判定用
+  // 📖 リアルタイム・スワイプ追従用ステート
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [dragOffset, setDragOffset] = useState<number>(0);
+  const [isSwiping, setIsSwiping] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchEvents = async () => {
     setIsLoading(true);
@@ -155,42 +158,59 @@ export function Calendar() {
 
   const handlePrevMonth = () => {
     if (currentMonth === 1) {
-      setCurrentYear(currentYear - 1);
+      setCurrentYear((y) => y - 1);
       setCurrentMonth(12);
     } else {
-      setCurrentMonth(currentMonth - 1);
+      setCurrentMonth((m) => m - 1);
     }
   };
 
   const handleNextMonth = () => {
     if (currentMonth === 12) {
-      setCurrentYear(currentYear + 1);
+      setCurrentYear((y) => y + 1);
       setCurrentMonth(1);
     } else {
-      setCurrentMonth(currentMonth + 1);
+      setCurrentMonth((m) => m + 1);
     }
   };
 
-  /* 👈 👉 スマホのスワイプ検知 */
-  const handleTouchStart = (e: any) => {
+  /* 👈 👉 指のリアルタイムスワイプ追従処理 */
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches && e.touches.length > 0) {
       setTouchStartX(e.touches[0].clientX);
+      setIsSwiping(true);
     }
   };
 
-  const handleTouchEnd = (e: any) => {
-    if (touchStartX === null || !e.changedTouches || e.changedTouches.length === 0) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diffX = touchStartX - touchEndX;
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX === null || !e.touches || e.touches.length === 0) return;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - touchStartX;
+    setDragOffset(diff); // 指の移動量（ピクセル）をセット
+  };
 
-    if (diffX > 60) {
+  const handleTouchEnd = () => {
+    if (touchStartX === null) return;
+
+    // コンテナの幅（画面幅など）を取得して閾値（例えば画面幅の25%以上ドラッグしたら切り替え）を決める
+    const containerWidth = containerRef.current?.offsetWidth || 300;
+    const threshold = containerWidth * 0.25;
+
+    if (dragOffset < -threshold) {
+      // 左に十分引いたら次の月へ
       handleNextMonth();
-    } else if (diffX < -60) {
+    } else if (dragOffset > threshold) {
+      // 右に十分引いたら前の月へ
       handlePrevMonth();
     }
+
+    // アニメーション用に指を離した状態に戻す
+    setIsSwiping(false);
+    setDragOffset(0);
     setTouchStartX(null);
   };
 
+  // 前の月・次の月の日数を算出
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
   const firstDayOfWeek = new Date(currentYear, currentMonth - 1, 1).getDay();
 
@@ -307,18 +327,14 @@ export function Calendar() {
 
   return (
     <div className="calendar-layout-wrapper">
-      <div
-        className="calendar-container"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
+      <div className="calendar-container" ref={containerRef}>
         <div className="calendar-header">
           <div className="month-control">
             <button className="nav-btn" onClick={handlePrevMonth}>‹</button>
             <h2>{currentYear}年 {currentMonth}月</h2>
             <button className="nav-btn" onClick={handleNextMonth}>›</button>
           </div>
-            {isLoading && <span className="month-badge">読み込み中...</span>}
+          {isLoading && <span className="month-badge">読み込み中...</span>}
         </div>
 
         <div className="calendar-week">
@@ -331,58 +347,71 @@ export function Calendar() {
           <div className="weekday sat">土</div>
         </div>
 
-        <div className="calendar-grid">
-          {Array.from({ length: firstDayOfWeek }, (_, i) => (
-            <div key={`empty-${i}`} className="calendar-cell empty" />
-          ))}
+        {/* 📖 スワイプ追従エリア */}
+        <div
+          className="calendar-swipe-viewport"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            className={`calendar-grid ${!isSwiping ? "is-animating" : ""}`}
+            style={{
+              transform: `translateX(${dragOffset}px)`,
+            }}
+          >
+            {Array.from({ length: firstDayOfWeek }, (_, i) => (
+              <div key={`empty-${i}`} className="calendar-cell empty" />
+            ))}
 
-          {Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const isToday = dateStr === todayStr;
-            const isSelected = selectedDate === dateStr;
-            const holidayName = getJapaneseHoliday(currentYear, currentMonth, day);
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const dateStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const isToday = dateStr === todayStr;
+              const isSelected = selectedDate === dateStr;
+              const holidayName = getJapaneseHoliday(currentYear, currentMonth, day);
 
-            const dayEvents = events.filter((ev) => isEventOnDate(ev, dateStr));
+              const dayEvents = events.filter((ev) => isEventOnDate(ev, dateStr));
 
-            return (
-              <div
-                key={dateStr}
-                className={`calendar-cell ${isToday ? "is-today" : ""} ${isSelected ? "is-selected" : ""}`}
-                onClick={() => handleDateClick(dateStr)}
-              >
-                <div className="cell-header">
-                  <span className={`cell-day-number ${holidayName ? "is-holiday" : ""}`}>
-                    {day}
-                  </span>
-                  {holidayName && <span className="holiday-label">{holidayName}</span>}
+              return (
+                <div
+                  key={dateStr}
+                  className={`calendar-cell ${isToday ? "is-today" : ""} ${isSelected ? "is-selected" : ""}`}
+                  onClick={() => handleDateClick(dateStr)}
+                >
+                  <div className="cell-header">
+                    <span className={`cell-day-number ${holidayName ? "is-holiday" : ""}`}>
+                      {day}
+                    </span>
+                    {holidayName && <span className="holiday-label">{holidayName}</span>}
+                  </div>
+
+                  <div className="cell-event-list">
+                    {dayEvents.map((ev) => {
+                      const isMultiDay = ev.startDate !== ev.endDate && ev.repeat === "none";
+
+                      return (
+                        <div
+                          key={ev.id + dateStr}
+                          className={`cell-event-tag ${isMultiDay ? "is-span-event" : ""}`}
+                          style={{
+                            backgroundColor: ev.color ? `${ev.color}25` : "rgba(138, 43, 226, 0.15)",
+                            borderLeftColor: ev.color || "#8a2be2",
+                            color: ev.color || "#222",
+                          }}
+                        >
+                          {!ev.allDay && <span className="tag-time">{ev.startTime}</span>}
+                          <span className="tag-title">
+                            {ev.repeat !== "none" ? "🔄 " : ""}{ev.title}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-
-                <div className="cell-event-list">
-                  {dayEvents.map((ev) => {
-                    const isMultiDay = ev.startDate !== ev.endDate && ev.repeat === "none";
-
-                    return (
-                      <div
-                        key={ev.id + dateStr}
-                        className={`cell-event-tag ${isMultiDay ? "is-span-event" : ""}`}
-                        style={{
-                          backgroundColor: ev.color ? `${ev.color}25` : "rgba(138, 43, 226, 0.15)",
-                          borderLeftColor: ev.color || "#8a2be2",
-                          color: ev.color || "#222",
-                        }}
-                      >
-                        {!ev.allDay && <span className="tag-time">{ev.startTime}</span>}
-                        <span className="tag-title">
-                          {ev.repeat !== "none" ? "🔄 " : ""}{ev.title}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -452,7 +481,7 @@ export function Calendar() {
         <div className="modal-overlay" onClick={handleCloseForm}>
           <div className="modal-box form-modal-box large-modal" onClick={(e) => e.stopPropagation()}>
             <form onSubmit={handleSaveEvent}>
-<div className="modal-header">
+              <div className="modal-header">
                 <h3>{editingEventId ? "予定の編集" : "新規予定作成"}</h3>
                 <div className="modal-header-actions">
                   {editingEventId && (
